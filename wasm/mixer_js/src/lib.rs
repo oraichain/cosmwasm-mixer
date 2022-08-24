@@ -87,7 +87,7 @@ pub fn gen_note() -> Option<Uint8Array> {
 }
 
 #[wasm_bindgen]
-pub fn prepare_wasm_utils_zk_circuit(
+pub fn gen_zk(
     note_secret: Uint8Array,
     leaves: Vec<Uint8Array>,
     contract_addr: String,
