@@ -23,6 +23,12 @@ To build the contract, run the following command.
 yarn build
 ```
 
+generate mixer js:
+
+```
+wasm-pack build --target nodejs
+```
+
 ## Testing
 
 Run the following command to run the unit tests.
