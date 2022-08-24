@@ -1,0 +1,25 @@
+[package]
+name = "cosmwasm-mixer-js"
+version = "0.0.1"
+authors = ["Thanh tu <tu@orai.io>", "Duc Pham <duc@orai.io>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.78"
+serde = { version = "1.0.127", default-features = false, features = ["derive"] }
+getrandom = { version = "0.2", features = ["js"] }
+wasm-utils = { version = "0.1.3" }
+js-sys = "0.3.55"
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+
+[profile.release]
+codegen-units = 1 # better optimizations
+# Tell `rustc` to optimize for speed.
+opt-level = 3
+
+
+

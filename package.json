@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "test": "node test.js",
+    "gen-ts": "node gen-ts.js",
+    "build-wasm": "cd wasm/mixer_js && wasm-pack build --target nodejs",
+    "build": "bash build_release.sh contracts/mixer",
+    "postinstall": "patch-package"
+  },
+  "dependencies": {
+    "@cosmwasm/ts-codegen": "^0.11.1"
+  },
+  "devDependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.28.13",
+    "patch-package": "^6.4.7"
+  }
+}

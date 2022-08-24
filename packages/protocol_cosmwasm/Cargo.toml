@@ -1,0 +1,36 @@
+[package]
+name = "protocol-cosmwasm"
+version = "0.1.0"
+authors = ["guorong <dudurong009@gmail.com>"]
+edition = "2021"
+description = "Common helpers for protocol-cosmwasm"
+
+[features]
+# for quicker tests, cargo test --lib
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+[dependencies]
+cw20 = "0.5.0"
+cw20-base = { version = "0.5.0", features = ["library"] }
+cosmwasm-std = "0.13.2"
+schemars = "0.7"
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.26" }
+tiny-keccak = { version = "2.0.2", features = ["sha3"] }
+
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+
+arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-groth16 = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false }
+
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
