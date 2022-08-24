@@ -58,7 +58,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
     pub native_token_denom: String,
-    pub cw20_address: HumanAddr,
+    pub cw20_address: String,
     pub deposit_size: String,
 }
 

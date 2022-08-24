@@ -402,18 +402,16 @@ fn get_config(deps: Deps) -> StdResult<ConfigResponse> {
         Some(v) => v,
         None => "".to_string(),
     };
-    if let Some(cw20_address) = mixer.cw20_address {
-        let deposit_size = mixer.deposit_size.to_string();
-        return Ok(ConfigResponse {
-            native_token_denom,
-            cw20_address,
-            deposit_size,
-        });
-    }
-
-    return Err(StdError::GenericErr {
-        msg: "Invalid cw20 address".to_string(),
-    });
+    let cw20_address = match mixer.cw20_address {
+        Some(v) => v.to_string(),
+        None => "".to_string(),
+    };
+    let deposit_size = mixer.deposit_size.to_string();
+    Ok(ConfigResponse {
+        native_token_denom,
+        cw20_address,
+        deposit_size,
+    })
 }
 
 fn get_merkle_tree_info(deps: Deps) -> StdResult<MerkleTreeInfoResponse> {

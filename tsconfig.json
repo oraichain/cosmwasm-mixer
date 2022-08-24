@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "strict": false,
+    },
+    "include": [
+        "global.d.ts",
+    ],
+    "files": [
+        "sample.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "ts-node": {
+        "transpileOnly": true
+    }
+}

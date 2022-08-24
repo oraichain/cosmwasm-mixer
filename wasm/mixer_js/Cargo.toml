@@ -16,10 +16,6 @@ js-sys = "0.3.55"
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
 
-[profile.release]
-codegen-units = 1 # better optimizations
-# Tell `rustc` to optimize for speed.
-opt-level = 3
 
 
 

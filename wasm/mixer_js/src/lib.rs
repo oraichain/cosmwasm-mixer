@@ -29,7 +29,7 @@ fn setup_wasm_utils_zk_circuit(
     note_secret: Uint8Array,
     leaves: &Vec<Uint8Array>,
     curve: Curve,
-    recipient_bytes: Vec<u8>,
+    contract_addr_bytes: Vec<u8>,
     relayer_bytes: Vec<u8>,
     fee_value: u128,
     refund_value: u128,
@@ -55,7 +55,7 @@ fn setup_wasm_utils_zk_circuit(
         backend: Backend::Arkworks,
         secret: secret.to_vec(),
         nullifier: nullifier.to_vec(),
-        recipient: recipient_bytes.clone(),
+        recipient: contract_addr_bytes.clone(),
         relayer: relayer_bytes.clone(),
         pk: PK_BYTES.to_vec(),
         refund: refund_value,
@@ -90,12 +90,12 @@ pub fn gen_note() -> Option<Uint8Array> {
 pub fn prepare_wasm_utils_zk_circuit(
     note_secret: Uint8Array,
     leaves: Vec<Uint8Array>,
-    recipient: String,
+    contract_addr: String,
     relayer: String,
     fee: Option<String>,
     refund: Option<String>,
 ) -> Result<Vec<Uint8Array>, JsValue> {
-    let recipient_bytes = recipient.as_bytes();
+    let contract_addr_bytes = contract_addr.as_bytes();
     let relayer_bytes = relayer.as_bytes();
     let fee_value = u128::from_str_radix(fee.unwrap_or_default().as_str(), 10).unwrap_or(0);
     let refund_value = u128::from_str_radix(refund.unwrap_or_default().as_str(), 10).unwrap_or(0);
@@ -105,7 +105,7 @@ pub fn prepare_wasm_utils_zk_circuit(
         note_secret,
         &leaves,
         Curve::Bn254,
-        truncate_and_pad(recipient_bytes),
+        truncate_and_pad(contract_addr_bytes),
         truncate_and_pad(relayer_bytes),
         fee_value,
         refund_value,
