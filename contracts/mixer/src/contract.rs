@@ -13,7 +13,7 @@ use protocol_cosmwasm::mixer::{
 };
 use protocol_cosmwasm::mixer_verifier::MixerVerifier;
 use protocol_cosmwasm::poseidon::Poseidon;
-use protocol_cosmwasm::utils::{checked_sub, truncate_and_pad};
+use protocol_cosmwasm::utils::{checked_sub, element_encoder, truncate_and_pad};
 use protocol_cosmwasm::zeroes::zeroes;
 
 use codec::Encode;
@@ -130,10 +130,11 @@ pub fn deposit_native(
 
     // Handle the "deposit"
     if let Some(commitment) = msg.commitment {
+        let commitment_bytes = element_encoder(commitment.as_slice());
         let mut merkle_tree = mixer.merkle_tree;
         let poseidon = POSEIDON.load(deps.storage)?;
         // insert commitment into merke_tree
-        let inserted_index = merkle_tree.insert(poseidon, commitment, deps.storage)?;
+        let inserted_index = merkle_tree.insert(poseidon, commitment_bytes, deps.storage)?;
         MIXER.save(
             deps.storage,
             &Mixer {
@@ -187,9 +188,10 @@ pub fn receive_cw20(
             // Handle the "deposit"
             if let Some(commitment) = commitment {
                 let mut merkle_tree = mixer.merkle_tree;
+                let commitment_bytes = element_encoder(commitment.as_slice());
                 let poseidon = POSEIDON.load(deps.storage)?;
                 let inserted_index = merkle_tree
-                    .insert(poseidon, commitment, deps.storage)
+                    .insert(poseidon, commitment_bytes, deps.storage)
                     .map_err(|_| ContractError::MerkleTreeIsFull)?;
 
                 MIXER.save(
@@ -232,6 +234,9 @@ pub fn withdraw(
     let relayer = msg.relayer;
     let fee = msg.fee;
     let refund = msg.refund;
+    let root_bytes = element_encoder(msg.root.as_slice());
+    let nullifier_hash_bytes = element_encoder(msg.nullifier_hash.as_slice());
+    let proof_bytes_vec = msg.proof_bytes.to_vec();
 
     let mixer = MIXER.load(deps.storage)?;
 
@@ -244,13 +249,13 @@ pub fn withdraw(
     }
 
     let merkle_tree = mixer.merkle_tree;
-    if !merkle_tree.is_known_root(msg.root, deps.storage) {
+    if !merkle_tree.is_known_root(root_bytes, deps.storage) {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Root is not known".to_string(),
         }));
     }
 
-    if is_known_nullifier(deps.storage, &msg.nullifier_hash) {
+    if is_known_nullifier(deps.storage, &nullifier_hash_bytes) {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Nullifier is known".to_string(),
         }));
@@ -276,7 +281,7 @@ pub fn withdraw(
 
     // Verify the proof
     let verifier = MIXERVERIFIER.load(deps.storage)?;
-    let result = verify(verifier, bytes, msg.proof_bytes)?;
+    let result = verify(verifier, bytes, proof_bytes_vec)?;
 
     if !result {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -425,7 +430,8 @@ fn get_merkle_tree_info(deps: Deps) -> StdResult<MerkleTreeInfoResponse> {
 
 fn get_merkle_root(deps: Deps, id: u32) -> StdResult<MerkleRootResponse> {
     let root = read_root(deps.storage, id)?;
-    Ok(MerkleRootResponse { root })
+    let root_binary = Binary::from(root.as_slice());
+    Ok(MerkleRootResponse { root: root_binary })
 }
 
 pub fn migrate(

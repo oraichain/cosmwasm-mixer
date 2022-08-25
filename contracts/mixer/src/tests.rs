@@ -8,6 +8,7 @@ use arkworks_setups::common::setup_params;
 use arkworks_setups::Curve;
 
 use cosmwasm_std::testing::{mock_dependencies, mock_info, MockApi, MockQuerier, MockStorage};
+use cosmwasm_std::Binary;
 use cosmwasm_std::{
     attr, to_binary, BlockInfo, Coin, ContractInfo, CosmosMsg, Env, HumanAddr, OwnedDeps, Uint128,
     WasmMsg,
@@ -159,10 +160,12 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     let mut element: [u8; 32] = [0u8; 32];
     element.copy_from_slice(&res.into_repr().to_bytes_le());
 
+    let element_bin = Binary::from(element.as_slice());
+
     // Try the deposit with insufficient fund
     let info = mock_info("depositor", &[Coin::new(1_000_u128, NATIVE_TOKEN_DENOM)]);
     let deposit_msg = DepositMsg {
-        commitment: Some(element),
+        commitment: Some(element_bin.clone()),
     };
 
     let err = handle(
@@ -196,7 +199,7 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(element),
+        commitment: Some(element_bin),
     };
 
     let response = handle(
@@ -220,13 +223,15 @@ fn test_mixer_should_be_able_to_deposit_cw20_token() {
     let mut element: [u8; 32] = [0u8; 32];
     element.copy_from_slice(&res.into_repr().to_bytes_le());
 
+    let element_bin = Binary::from(element.as_slice());
+
     // Try the deposit for success
     let info = mock_info(CW20_ADDRESS, &[]);
     let deposit_cw20_msg = HandleMsg::Receive(Cw20ReceiveMsg {
         sender: HumanAddr(CW20_ADDRESS.to_string()),
         amount: Uint128::from(1_000_000_u128),
         msg: to_binary(&Cw20HookMsg::DepositCw20 {
-            commitment: Some(element),
+            commitment: Some(element_bin),
         })
         .ok(),
     });
@@ -241,13 +246,17 @@ fn test_mixer_should_work_with_wasm_utils() {
         prepare_wasm_utils_zk_circuit(Curve::Bn254, RECIPIENT, RELAYER, FEE, REFUND);
     let mut deps = create_mixer(MixerType::Native);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     // Try the deposit for success
     let info = mock_info(
         "depositor",
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(leaf_element.0),
+        commitment: Some(Binary::from(leaf_element.0.as_slice())),
     };
 
     let response = handle(
@@ -264,9 +273,9 @@ fn test_mixer_should_work_with_wasm_utils() {
 
     // Should "succeed" to withdraw tokens.
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),
@@ -289,6 +298,9 @@ fn test_mixer_fail_when_any_byte_is_changed_in_proof() {
     let (mut proof_bytes, root_element, nullifier_hash_element, leaf_element) =
         prepare_wasm_utils_zk_circuit(Curve::Bn254, RECIPIENT, RELAYER, FEE, REFUND);
 
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     let mut deps = create_mixer(MixerType::Native);
 
     // Try the deposit for success
@@ -297,7 +309,7 @@ fn test_mixer_fail_when_any_byte_is_changed_in_proof() {
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(leaf_element.0),
+        commitment: Some(Binary::from(leaf_element.0.as_slice())),
     };
 
     let response = handle(
@@ -314,11 +326,12 @@ fn test_mixer_fail_when_any_byte_is_changed_in_proof() {
 
     // Invalid withdraw proof leads to failure result.
     proof_bytes[0] = 1;
+    let proof_bytes_bin = Binary::from(proof_bytes.clone());
 
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),
@@ -345,10 +358,14 @@ fn test_mixer_should_withdraw_native_token() {
     let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     // Try the deposit for success
     let info = mock_info("anyone", &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)]);
     let deposit_msg = DepositMsg {
-        commitment: Some(leaf_element.0),
+        commitment: Some(Binary::from(leaf_element.0.to_vec())),
     };
 
     let response = handle(
@@ -361,9 +378,9 @@ fn test_mixer_should_withdraw_native_token() {
     assert_eq!(response.attributes.len(), 3);
 
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),
@@ -386,6 +403,10 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
     let (proof_bytes, mut root_element, nullifier_hash_element, leaf_element) =
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     let mut deps = create_mixer(MixerType::Native);
 
     // Try the deposit for success
@@ -394,7 +415,7 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(leaf_element.0),
+        commitment: Some(Binary::from(leaf_element.0.to_vec())),
     };
 
     let response = handle(
@@ -412,9 +433,9 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
     // Invalid root_element leads to failure.
     root_element.0[0] = 0;
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),
@@ -440,6 +461,10 @@ fn test_mixer_should_withdraw_cw20_token() {
     let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     let mut deps = create_mixer(MixerType::Cw20);
 
     // Try the deposit for success
@@ -448,7 +473,7 @@ fn test_mixer_should_withdraw_cw20_token() {
         sender: HumanAddr(CW20_ADDRESS.to_string()),
         amount: Uint128::from(1_000_000_u128),
         msg: to_binary(&Cw20HookMsg::DepositCw20 {
-            commitment: Some(leaf_element.0),
+            commitment: Some(Binary::from(leaf_element.0.to_vec())),
         })
         .ok(),
     });
@@ -462,9 +487,9 @@ fn test_mixer_should_withdraw_cw20_token() {
 
     // Withdraw should succeed
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),
@@ -499,6 +524,10 @@ fn test_mixer_should_fail_when_wrong_relayer_input() {
     let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     let mut deps = create_mixer(MixerType::Cw20);
 
     // Try the deposit for success
@@ -507,7 +536,7 @@ fn test_mixer_should_fail_when_wrong_relayer_input() {
         sender: HumanAddr(CW20_ADDRESS.to_string()),
         amount: Uint128::from(1_000_000_u128),
         msg: to_binary(&Cw20HookMsg::DepositCw20 {
-            commitment: Some(leaf_element.0),
+            commitment: Some(Binary::from(leaf_element.0.to_vec())),
         })
         .ok(),
     });
@@ -521,9 +550,9 @@ fn test_mixer_should_fail_when_wrong_relayer_input() {
 
     // Should fail with "Invalid withdraw proof" since "relayer" is changed.
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr("wrong_relayer_address".to_string()),
         fee: Uint128::from(FEE),
@@ -549,6 +578,10 @@ fn test_mixer_should_fail_when_fee_submitted_is_changed() {
     let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
+    let proof_bytes_bin = Binary::from(proof_bytes);
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+
     let mut deps = create_mixer(MixerType::Cw20);
 
     // Try the deposit for success
@@ -557,7 +590,7 @@ fn test_mixer_should_fail_when_fee_submitted_is_changed() {
         sender: HumanAddr(CW20_ADDRESS.to_string()),
         amount: Uint128::from(1_000_000_u128),
         msg: to_binary(&Cw20HookMsg::DepositCw20 {
-            commitment: Some(leaf_element.0),
+            commitment: Some(Binary::from(leaf_element.0.to_vec())),
         })
         .ok(),
     });
@@ -571,9 +604,9 @@ fn test_mixer_should_fail_when_fee_submitted_is_changed() {
 
     // Should fail with "Invalid withdraw proof" since "fee" is changed.
     let withdraw_msg = WithdrawMsg {
-        proof_bytes,
-        root: root_element.0,
-        nullifier_hash: nullifier_hash_element.0,
+        proof_bytes: proof_bytes_bin,
+        root: root_element_bin,
+        nullifier_hash: nullifier_hash_bin,
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr("wrong_relayer_address".to_string()),
         fee: Uint128::from(1u128),
