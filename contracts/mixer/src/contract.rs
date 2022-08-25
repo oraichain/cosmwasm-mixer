@@ -257,7 +257,7 @@ pub fn withdraw(
     }
 
     // Format the public input bytes
-    let recipient_bytes = truncate_and_pad(env.contract.address.as_bytes());
+    let recipient_bytes = truncate_and_pad(recipient.as_bytes());
     let relayer_bytes = truncate_and_pad(relayer.as_bytes());
 
     let mut arbitrary_data_bytes = Vec::new();

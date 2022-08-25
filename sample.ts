@@ -118,11 +118,14 @@ const handle = async (
   }
 };
 
-const getProof = async (noteSecret: Uint8Array): Promise<Uint8Array[]> => {
+const getProof = async (
+  noteSecret: Uint8Array,
+  recipient: string
+): Promise<Uint8Array[]> => {
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
   const leaves = await getLeaves(address);
   const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
-  return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, address, sender);
+  return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender);
 };
 
 const runDeposit = async (index = 0) => {
@@ -147,9 +150,11 @@ const runDeposit = async (index = 0) => {
 const runWithdraw = async (recipient: string, index = 0) => {
   const noteSecret = getNote(index);
   const [proof, root_hash, nullifier_hash, commitment_hash] = await getProof(
-    noteSecret
+    noteSecret,
+    recipient
   );
 
+  // withdraw to this recipient
   const result = await handle(
     address,
     {
@@ -170,9 +175,9 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // console.log((await getProof(getNote(1)))[1]);
+  console.log(await getProof(getNote(1), recipient));
 
   // console.log(await query(address, { merkle_root: { id: 10 } }));
 
-  await runWithdraw(recipient, 1);
+  // await runWithdraw(recipient, 1);
 })();

@@ -53,7 +53,6 @@ fn mock_env() -> Env {
 
 fn create_mixer(ty: MixerType) -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let mut deps = mock_dependencies(&[]);
-
     // Initialize the contract
     let env = mock_env();
     let info = mock_info("anyone", &[]);
@@ -109,7 +108,7 @@ fn prepare_zk_circuit(
     refund: u128,
 ) -> (Vec<u8>, Element, Element, Element) {
     let (pk_bytes, _) = crate::test_util::setup_environment(curve);
-    let recipient_bytes = CONTRACT_ADDR.as_bytes();
+    let recipient_bytes = RECIPIENT.as_bytes();
     let relayer_bytes = relayer.as_bytes();
     let fee_value = fee;
     let refund_value = refund;
