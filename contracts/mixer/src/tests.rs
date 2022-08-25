@@ -265,6 +265,7 @@ fn test_mixer_should_work_with_wasm_utils() {
         on_chain_root, root_element.0, leaf_element.0
     );
     assert_eq!(on_chain_root, local_root);
+    println!("{:?} {:?} {:?}", on_chain_root, local_root, leaf_element.0);
 
     // Should "succeed" to withdraw tokens.
     let withdraw_msg = WithdrawMsg {

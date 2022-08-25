@@ -10,9 +10,10 @@ use wasm_utils::proof::truncate_and_pad;
 use wasm_utils::{
     proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
     types::{Backend, Curve as WasmCurve},
+    TREE_HEIGHT,
 };
 // equal MERKLE_TREE_LEVELS
-const TREE_HEIGHT: usize = 30;
+
 type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 const PK_BYTES: &[u8; 3034288] = include_bytes!("../../../bn254/x5/proving_key.bin");
 
@@ -79,9 +80,8 @@ pub fn gen_note() -> Option<Uint8Array> {
 
 #[wasm_bindgen]
 pub fn gen_commitment(note_secret: Uint8Array) -> Uint8Array {
-    let raw = note_secret.to_vec();
-    let secret = &raw[0..32];
-    let nullifier = &raw[32..64];
+    let secret = note_secret.slice(0, 32).to_vec();
+    let nullifier = note_secret.slice(32, 64).to_vec();
     let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
         Curve::Bn254,
         secret.to_vec(),
