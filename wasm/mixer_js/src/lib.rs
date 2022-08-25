@@ -87,6 +87,21 @@ pub fn gen_note() -> Option<Uint8Array> {
 }
 
 #[wasm_bindgen]
+pub fn gen_commitment(note_secret: Uint8Array) -> Uint8Array {
+    let raw = note_secret.to_vec();
+    let secret = &raw[0..32];
+    let nullifier = &raw[32..64];
+    let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
+        Curve::Bn254,
+        secret.to_vec(),
+        nullifier.to_vec(),
+    )
+    .unwrap();
+
+    from_bytes(&leaf.leaf_bytes, Some(32))
+}
+
+#[wasm_bindgen]
 pub fn gen_zk(
     note_secret: Uint8Array,
     leaves: Vec<Uint8Array>,
