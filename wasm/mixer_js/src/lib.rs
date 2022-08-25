@@ -27,8 +27,8 @@ fn from_bytes(bytes: &[u8], len: Option<u32>) -> Uint8Array {
 /// with input(curve, recipient, relayer, commitment, proving key, chain_id, fee, refund).
 fn setup_wasm_utils_zk_circuit(
     note_secret: Uint8Array,
-    leaves: &Vec<Uint8Array>,
-    curve: Curve,
+    index: u32,
+    leaves: Vec<Uint8Array>,
     contract_addr_bytes: Vec<u8>,
     relayer_bytes: Vec<u8>,
     fee_value: u128,
@@ -37,16 +37,8 @@ fn setup_wasm_utils_zk_circuit(
     let raw = note_secret.to_vec();
     let secret = &raw[0..32];
     let nullifier = &raw[32..64];
-    let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
-        curve,
-        secret.to_vec(),
-        nullifier.to_vec(),
-    )
-    .unwrap();
 
-    let index = leaves.len() as u64;
-    let mut leaves_vec: Vec<Vec<u8>> = leaves.into_iter().map(|item| item.to_vec()).collect();
-    leaves_vec.push(leaf.leaf_bytes);
+    let leaves_vec: Vec<Vec<u8>> = leaves.into_iter().map(|item| item.to_vec()).collect();
 
     let mixer_proof_input = MixerProofInput {
         exponentiation: 5,
@@ -62,7 +54,7 @@ fn setup_wasm_utils_zk_circuit(
         fee: fee_value,
         chain_id: 0,
         leaves: leaves_vec,
-        leaf_index: index,
+        leaf_index: index as u64, // no so much transaction
     };
     let js_proof_inputs = JsProofInput {
         inner: ProofInput::Mixer(mixer_proof_input),
@@ -104,6 +96,7 @@ pub fn gen_commitment(note_secret: Uint8Array) -> Uint8Array {
 #[wasm_bindgen]
 pub fn gen_zk(
     note_secret: Uint8Array,
+    index: u32,
     leaves: Vec<Uint8Array>,
     contract_addr: String,
     relayer: String,
@@ -118,8 +111,8 @@ pub fn gen_zk(
     // Setup zk circuit for withdraw
     setup_wasm_utils_zk_circuit(
         note_secret,
-        &leaves,
-        Curve::Bn254,
+        index,
+        leaves,
         truncate_and_pad(contract_addr_bytes),
         truncate_and_pad(relayer_bytes),
         fee_value,

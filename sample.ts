@@ -34,19 +34,13 @@ function compare(a, b) {
   return true;
 }
 
-const getLeaves = async (
-  address: string,
-  commitment_hash: Uint8Array
-): Promise<Uint8Array[]> => {
+const getLeaves = async (address: string): Promise<Uint8Array[]> => {
   const { txs } = await cosmos.get(
     `cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
   );
-  const leaves = [];
-  for (const tx of txs) {
-    const { commitment } = tx.body.messages[0].msg.deposit;
-    if (compare(commitment, commitment_hash)) break;
-    leaves.push(Uint8Array.from(commitment));
-  }
+  const leaves = txs.map((tx) =>
+    Uint8Array.from(tx.body.messages[0].msg.deposit.commitment)
+  );
   return leaves;
 };
 
@@ -126,8 +120,9 @@ const handle = async (
 
 const getProof = async (noteSecret: Uint8Array): Promise<Uint8Array[]> => {
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
-  const leaves = await getLeaves(address, commitment_hash);
-  return cosmwasmMixer.gen_zk(noteSecret, leaves, address, sender);
+  const leaves = await getLeaves(address);
+  const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
+  return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, address, sender);
 };
 
 const runDeposit = async (index = 0) => {
@@ -175,9 +170,9 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // runWithdraw(recipient, 0);
+  // console.log((await getProof(getNote(1)))[1]);
 
-  console.log(
-    await getLeaves(address, cosmwasmMixer.gen_commitment(getNote(5)))
-  );
+  // console.log(await query(address, { merkle_root: { id: 10 } }));
+
+  await runWithdraw(recipient, 1);
 })();
