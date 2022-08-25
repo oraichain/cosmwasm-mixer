@@ -8,12 +8,12 @@ const childKey = cosmos.getChildKey(process.env.MNEMONIC);
 const sender = cosmos.getAddress(childKey);
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
-const address = 'orai1q0cz7c93e6zfedqkrty24hn0pkksm9ahjalhuu';
-for (let i = 0; i < 10; i++) {
-  console.log(
-    Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
-  );
-}
+const address = 'orai12a4rd7y5yfgwu8gkcqqhg20c7s6tyaw4umrktt';
+// for (let i = 0; i < 10; i++) {
+//   console.log(
+//     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
+//   );
+// }
 const noteSecrets = [
   'HXoIWMmNaI2btxzOB2B6UY7LIrgN71XIIDNdlyGWU2wZOg9msElhfMBFMGytBemVY1KiXJgVm4JzxkSblgR9zQ',
   'AvKMZekNDvDyoF3M8uIMiOHXPsvbTcHJx7sdsZdKS2nAMqiO3yAioFKWST1KWvuw5oPDcgIEigg5BKJOX9AYGw',
@@ -39,7 +39,7 @@ const getLeaves = async (address: string): Promise<Uint8Array[]> => {
     `cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
   );
   const leaves = txs.map((tx) =>
-    Uint8Array.from(tx.body.messages[0].msg.deposit.commitment)
+    Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')
   );
   return leaves;
 };
@@ -71,8 +71,8 @@ const getHandleMessage = (contract, msg, sender, amount, funds) => {
   const sent_funds = funds
     ? funds
     : amount
-    ? [{ denom: cosmos.bech32MainPrefix, amount }]
-    : null;
+      ? [{ denom: cosmos.bech32MainPrefix, amount }]
+      : null;
   const msgSend = new message.cosmwasm.wasm.v1beta1.MsgExecuteContract({
     contract,
     msg,
@@ -138,7 +138,7 @@ const runDeposit = async (index = 0) => {
     address,
     {
       deposit: {
-        commitment: Array.from(commitment_hash)
+        commitment: Buffer.from(commitment_hash).toString('base64')
       }
     },
     { amount: deposit_size, gas: 2000000 }
@@ -159,9 +159,9 @@ const runWithdraw = async (recipient: string, index = 0) => {
     address,
     {
       withdraw: {
-        proof_bytes: Array.from(proof),
-        root: Array.from(root_hash),
-        nullifier_hash: Array.from(nullifier_hash),
+        proof_bytes: Buffer.from(proof).toString('base64'),
+        root: Buffer.from(root_hash).toString('base64'),
+        nullifier_hash: Buffer.from(nullifier_hash).toString('base64'),
         recipient,
         relayer: sender,
         fee: '0',
@@ -175,7 +175,9 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // console.log(await getProof(getNote(1), recipient));
+  // for (let i = 0; i < 10; i++) {
+  await runDeposit(1);
+  // }
   // console.log(await query(address, { merkle_root: { id: 10 } }));
-  // await runWithdraw(recipient, 1);
+  await runWithdraw(recipient, 1);
 })();

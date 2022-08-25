@@ -150,7 +150,7 @@ pub fn deposit_native(
             attributes: vec![
                 attr("action", "deposit_native"),
                 attr("inserted_index", inserted_index.to_string()),
-                attr("commitment", format!("{:?}", commitment)),
+                attr("commitment", commitment.to_base64()),
             ],
         });
     }
@@ -210,7 +210,7 @@ pub fn receive_cw20(
                     attributes: vec![
                         attr("action", "deposit_cw20"),
                         attr("inserted_index", inserted_index.to_string()),
-                        attr("commitment", format!("{:?}", commitment)),
+                        attr("commitment", commitment.to_base64()),
                     ],
                 });
             }
@@ -373,8 +373,8 @@ pub fn withdraw(
         attributes: vec![
             attr("action", "withdraw"),
             attr("recipient", recipient),
-            attr("root", format!("{:?}", msg.root)),
-            attr("nullifier_hash", format!("{:?}", msg.nullifier_hash)),
+            attr("root", msg.root.to_base64()),
+            attr("nullifier_hash", msg.nullifier_hash.to_base64()),
         ],
     })
 }
