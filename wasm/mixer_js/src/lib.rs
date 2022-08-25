@@ -10,9 +10,10 @@ use wasm_utils::proof::truncate_and_pad;
 use wasm_utils::{
     proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
     types::{Backend, Curve as WasmCurve},
+    TREE_HEIGHT,
 };
 // equal MERKLE_TREE_LEVELS
-const TREE_HEIGHT: usize = 30;
+
 type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 const PK_BYTES: &[u8; 3034288] = include_bytes!("../../../bn254/x5/proving_key.bin");
 
