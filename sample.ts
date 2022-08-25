@@ -9,11 +9,11 @@ const sender = cosmos.getAddress(childKey);
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
 const address = 'orai1q0cz7c93e6zfedqkrty24hn0pkksm9ahjalhuu';
-// for (let i = 0; i < 10; i++) {
-//   console.log(
-//     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
-//   );
-// }
+for (let i = 0; i < 10; i++) {
+  console.log(
+    Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
+  );
+}
 const noteSecrets = [
   'HXoIWMmNaI2btxzOB2B6UY7LIrgN71XIIDNdlyGWU2wZOg9msElhfMBFMGytBemVY1KiXJgVm4JzxkSblgR9zQ',
   'AvKMZekNDvDyoF3M8uIMiOHXPsvbTcHJx7sdsZdKS2nAMqiO3yAioFKWST1KWvuw5oPDcgIEigg5BKJOX9AYGw',
@@ -175,9 +175,7 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  console.log(await getProof(getNote(1), recipient));
-
+  // console.log(await getProof(getNote(1), recipient));
   // console.log(await query(address, { merkle_root: { id: 10 } }));
-
   // await runWithdraw(recipient, 1);
 })();
