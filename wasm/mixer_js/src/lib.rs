@@ -73,6 +73,7 @@ fn setup_wasm_utils_zk_circuit(
 pub fn gen_note() -> Uint8Array {
     let mut note = vec![];
     let rng = &mut ark_std::rand::rngs::OsRng::default();
+    // create random leaf then get secret and nullifier, so later we can reconstruct it
     if let Ok([secret, nullifier]) = note::mixer::generate_secrets(5, 3, WasmCurve::Bn254, rng) {
         note.extend(&secret);
         note.extend(&nullifier);
@@ -82,9 +83,8 @@ pub fn gen_note() -> Uint8Array {
 
 #[wasm_bindgen]
 pub fn gen_commitment(note_secret: Uint8Array) -> Uint8Array {
-    let raw = note_secret.to_vec();
-    let secret = &raw[0..32];
-    let nullifier = &raw[32..64];
+    let secret = note_secret.slice(0, 32).to_vec();
+    let nullifier = note_secret.slice(32, 64).to_vec();
     let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
         Curve::Bn254,
         secret.to_vec(),
