@@ -409,7 +409,6 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
         prepare_zk_circuit(0, Curve::Bn254, RELAYER, FEE, REFUND);
 
     let proof_bytes_bin = Binary::from(proof_bytes);
-    let root_element_bin = Binary::from(root_element.0.to_vec());
     let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
 
     let mut deps = create_mixer(MixerType::Native);
@@ -437,6 +436,8 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
 
     // Invalid root_element leads to failure.
     root_element.0[0] = 0;
+    let root_element_bin = Binary::from(root_element.0.to_vec());
+
     let withdraw_msg = WithdrawMsg {
         proof_bytes: proof_bytes_bin,
         root: root_element_bin,
