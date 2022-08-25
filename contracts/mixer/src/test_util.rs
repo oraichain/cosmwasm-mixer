@@ -52,8 +52,7 @@ pub fn setup_zk_circuit(
     Element, // nullifier_hash
     Element, // leaf
 ) {
-    // let rng =&mut ark_std::test_rng();
-    let rng = &mut ark_std::rand::thread_rng();
+    let rng = &mut ark_std::test_rng();
 
     match curve {
         Curve::Bn254 => {
