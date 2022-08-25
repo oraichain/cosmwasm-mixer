@@ -5,7 +5,6 @@ use arkworks_setups::MixerProver;
 use js_sys::Uint8Array;
 use wasm_bindgen::prelude::*;
 
-use wasm_utils::note;
 use wasm_utils::proof::truncate_and_pad;
 // wasm-utils dependencies
 use wasm_utils::{
@@ -70,15 +69,12 @@ fn setup_wasm_utils_zk_circuit(
 }
 
 #[wasm_bindgen]
-pub fn gen_note() -> Uint8Array {
-    let mut note = vec![];
-    let rng = &mut ark_std::rand::rngs::OsRng::default();
-    // create random leaf then get secret and nullifier, so later we can reconstruct it
-    if let Ok([secret, nullifier]) = note::mixer::generate_secrets(5, 3, WasmCurve::Bn254, rng) {
-        note.extend(&secret);
-        note.extend(&nullifier);
+pub fn gen_note() -> Option<Uint8Array> {
+    let mut buffer = [0u8; 64];
+    if getrandom::getrandom(&mut buffer).is_ok() {
+        return Some(from_bytes(&buffer, None));
     }
-    from_bytes(&note, None)
+    None
 }
 
 #[wasm_bindgen]
