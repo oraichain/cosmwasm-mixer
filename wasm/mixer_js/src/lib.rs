@@ -10,9 +10,10 @@ use wasm_utils::proof::truncate_and_pad;
 use wasm_utils::{
     proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
     types::{Backend, Curve as WasmCurve},
+    TREE_HEIGHT,
 };
 // equal MERKLE_TREE_LEVELS
-const TREE_HEIGHT: usize = 30;
+
 type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 const PK_BYTES: &[u8; 3034288] = include_bytes!("../../../bn254/x5/proving_key.bin");
 
@@ -29,14 +30,13 @@ fn setup_wasm_utils_zk_circuit(
     note_secret: Uint8Array,
     index: u32,
     leaves: Vec<Uint8Array>,
-    contract_addr_bytes: Vec<u8>,
-    relayer_bytes: Vec<u8>,
-    fee_value: u128,
-    refund_value: u128,
+    recipient: Vec<u8>,
+    relayer: Vec<u8>,
+    fee: u128,
+    refund: u128,
 ) -> Result<Vec<Uint8Array>, JsValue> {
-    let raw = note_secret.to_vec();
-    let secret = &raw[0..32];
-    let nullifier = &raw[32..64];
+    let secret = note_secret.slice(0, 32).to_vec();
+    let nullifier = note_secret.slice(32, 64).to_vec();
 
     let leaves_vec: Vec<Vec<u8>> = leaves.into_iter().map(|item| item.to_vec()).collect();
 
@@ -45,16 +45,16 @@ fn setup_wasm_utils_zk_circuit(
         width: 3,
         curve: WasmCurve::Bn254,
         backend: Backend::Arkworks,
-        secret: secret.to_vec(),
-        nullifier: nullifier.to_vec(),
-        recipient: contract_addr_bytes.clone(),
-        relayer: relayer_bytes.clone(),
+        secret,
+        nullifier,
+        recipient,
+        relayer,
         pk: PK_BYTES.to_vec(),
-        refund: refund_value,
-        fee: fee_value,
+        refund,
+        fee,
         chain_id: 0,
         leaves: leaves_vec,
-        leaf_index: index as u64, // no so much transaction
+        leaf_index: index as u64, // not so much transaction
     };
     let js_proof_inputs = JsProofInput {
         inner: ProofInput::Mixer(mixer_proof_input),
@@ -80,9 +80,8 @@ pub fn gen_note() -> Option<Uint8Array> {
 
 #[wasm_bindgen]
 pub fn gen_commitment(note_secret: Uint8Array) -> Uint8Array {
-    let raw = note_secret.to_vec();
-    let secret = &raw[0..32];
-    let nullifier = &raw[32..64];
+    let secret = note_secret.slice(0, 32).to_vec();
+    let nullifier = note_secret.slice(32, 64).to_vec();
     let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
         Curve::Bn254,
         secret.to_vec(),
@@ -98,13 +97,11 @@ pub fn gen_zk(
     note_secret: Uint8Array,
     index: u32,
     leaves: Vec<Uint8Array>,
-    contract_addr: String,
-    relayer: String,
+    recipient_addr: String,
+    relayer_addr: String,
     fee: Option<String>,
     refund: Option<String>,
 ) -> Result<Vec<Uint8Array>, JsValue> {
-    let contract_addr_bytes = contract_addr.as_bytes();
-    let relayer_bytes = relayer.as_bytes();
     let fee_value = u128::from_str_radix(fee.unwrap_or_default().as_str(), 10).unwrap_or(0);
     let refund_value = u128::from_str_radix(refund.unwrap_or_default().as_str(), 10).unwrap_or(0);
 
@@ -113,8 +110,8 @@ pub fn gen_zk(
         note_secret,
         index,
         leaves,
-        truncate_and_pad(contract_addr_bytes),
-        truncate_and_pad(relayer_bytes),
+        truncate_and_pad(recipient_addr.as_bytes()),
+        truncate_and_pad(relayer_addr.as_bytes()),
         fee_value,
         refund_value,
     )

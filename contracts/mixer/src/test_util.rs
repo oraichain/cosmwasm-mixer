@@ -8,10 +8,9 @@ use arkworks_setups::MixerProver;
 use wasm_utils::{
     proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
     types::{Backend, Curve as WasmCurve},
+    DEFAULT_LEAF, TREE_HEIGHT,
 };
 
-const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
-const TREE_HEIGHT: usize = 30;
 type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
@@ -53,8 +52,7 @@ pub fn setup_zk_circuit(
     Element, // nullifier_hash
     Element, // leaf
 ) {
-    // let rng =&mut ark_std::test_rng();
-    let rng = &mut ark_std::rand::thread_rng();
+    let rng = &mut ark_std::test_rng();
 
     match curve {
         Curve::Bn254 => {

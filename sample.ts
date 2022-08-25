@@ -9,11 +9,11 @@ const sender = cosmos.getAddress(childKey);
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
 const address = 'orai1q0cz7c93e6zfedqkrty24hn0pkksm9ahjalhuu';
-// for (let i = 0; i < 10; i++) {
-//   console.log(
-//     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
-//   );
-// }
+for (let i = 0; i < 10; i++) {
+  console.log(
+    Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
+  );
+}
 const noteSecrets = [
   'HXoIWMmNaI2btxzOB2B6UY7LIrgN71XIIDNdlyGWU2wZOg9msElhfMBFMGytBemVY1KiXJgVm4JzxkSblgR9zQ',
   'AvKMZekNDvDyoF3M8uIMiOHXPsvbTcHJx7sdsZdKS2nAMqiO3yAioFKWST1KWvuw5oPDcgIEigg5BKJOX9AYGw',
@@ -118,11 +118,14 @@ const handle = async (
   }
 };
 
-const getProof = async (noteSecret: Uint8Array): Promise<Uint8Array[]> => {
+const getProof = async (
+  noteSecret: Uint8Array,
+  recipient: string
+): Promise<Uint8Array[]> => {
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
   const leaves = await getLeaves(address);
   const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
-  return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, address, sender);
+  return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender);
 };
 
 const runDeposit = async (index = 0) => {
@@ -147,9 +150,11 @@ const runDeposit = async (index = 0) => {
 const runWithdraw = async (recipient: string, index = 0) => {
   const noteSecret = getNote(index);
   const [proof, root_hash, nullifier_hash, commitment_hash] = await getProof(
-    noteSecret
+    noteSecret,
+    recipient
   );
 
+  // withdraw to this recipient
   const result = await handle(
     address,
     {
@@ -170,9 +175,7 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // console.log((await getProof(getNote(1)))[1]);
-
+  // console.log(await getProof(getNote(1), recipient));
   // console.log(await query(address, { merkle_root: { id: 10 } }));
-
-  await runWithdraw(recipient, 1);
+  // await runWithdraw(recipient, 1);
 })();

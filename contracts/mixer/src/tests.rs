@@ -54,7 +54,6 @@ fn mock_env() -> Env {
 
 fn create_mixer(ty: MixerType) -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let mut deps = mock_dependencies(&[]);
-
     // Initialize the contract
     let env = mock_env();
     let info = mock_info("anyone", &[]);
@@ -110,7 +109,7 @@ fn prepare_zk_circuit(
     refund: u128,
 ) -> (Vec<u8>, Element, Element, Element) {
     let (pk_bytes, _) = crate::test_util::setup_environment(curve);
-    let recipient_bytes = CONTRACT_ADDR.as_bytes();
+    let recipient_bytes = RECIPIENT.as_bytes();
     let relayer_bytes = relayer.as_bytes();
     let fee_value = fee;
     let refund_value = refund;
@@ -269,7 +268,13 @@ fn test_mixer_should_work_with_wasm_utils() {
     assert_eq!(response.attributes.len(), 3);
     let on_chain_root = crate::state::read_root(&deps.storage, 1).unwrap();
     let local_root = root_element.0;
+
+    println!(
+        "{:?}, {:?}, {:?}",
+        on_chain_root, root_element.0, leaf_element.0
+    );
     assert_eq!(on_chain_root, local_root);
+    println!("{:?} {:?} {:?}", on_chain_root, local_root, leaf_element.0);
 
     // Should "succeed" to withdraw tokens.
     let withdraw_msg = WithdrawMsg {
