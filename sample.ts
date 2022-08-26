@@ -8,7 +8,7 @@ const childKey = cosmos.getChildKey(process.env.MNEMONIC);
 const sender = cosmos.getAddress(childKey);
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
-const address = 'orai12a4rd7y5yfgwu8gkcqqhg20c7s6tyaw4umrktt';
+const contract_address = 'orai122qgjdfjm73guxjq0y67ng8jgex4w09ttguavj';
 // for (let i = 0; i < 10; i++) {
 //   console.log(
 //     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
@@ -123,7 +123,7 @@ const getProof = async (
   recipient: string
 ): Promise<Uint8Array[]> => {
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
-  const leaves = await getLeaves(address);
+  const leaves = await getLeaves(contract_address);
   const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
   return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender);
 };
@@ -132,10 +132,10 @@ const runDeposit = async (index = 0) => {
   const noteSecret = getNote(index);
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
 
-  const { deposit_size } = await query(address, { config: {} });
+  const { deposit_size } = await query(contract_address, { config: {} });
 
   const result = await handle(
-    address,
+    contract_address,
     {
       deposit: {
         commitment: Buffer.from(commitment_hash).toString('base64')
@@ -156,7 +156,7 @@ const runWithdraw = async (recipient: string, index = 0) => {
 
   // withdraw to this recipient
   const result = await handle(
-    address,
+    contract_address,
     {
       withdraw: {
         proof_bytes: Buffer.from(proof).toString('base64'),
@@ -175,5 +175,8 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // await runWithdraw(recipient, 1);
+  // for (let i = 0; i < 10; i++) {
+  //   await runDeposit(i);
+  // }
+  await runWithdraw(recipient, 1);
 })();
