@@ -2,7 +2,7 @@
   "scripts": {
     "test": "node test.js",
     "sample": "yarn ts-node sample.ts",
-    "build-wasm": "cd wasm/mixer_js && wasm-pack build --target nodejs",
+    "build-wasm": "cd wasm/mixer_js && wasm-pack build",
     "build": "bash build_release.sh contracts/mixer"
   },
   "dependencies": {

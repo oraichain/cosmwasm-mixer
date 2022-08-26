@@ -26,7 +26,7 @@ yarn build
 generate mixer js:
 
 ```
-wasm-pack build --target nodejs
+yarn build-wasm --target nodejs
 ```
 
 ## Testing
