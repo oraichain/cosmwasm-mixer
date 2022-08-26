@@ -63,7 +63,7 @@ const query = async (
   }
 };
 
-const getNote = (index = 0): Uint8Array => {
+const getNote = (index = 0): Buffer => {
   return Buffer.from(noteSecrets[index].padEnd(88, '='), 'base64');
 };
 
@@ -71,8 +71,8 @@ const getHandleMessage = (contract, msg, sender, amount, funds) => {
   const sent_funds = funds
     ? funds
     : amount
-      ? [{ denom: cosmos.bech32MainPrefix, amount }]
-      : null;
+    ? [{ denom: cosmos.bech32MainPrefix, amount }]
+    : null;
   const msgSend = new message.cosmwasm.wasm.v1beta1.MsgExecuteContract({
     contract,
     msg,
@@ -175,9 +175,5 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  // for (let i = 0; i < 10; i++) {
-  await runDeposit(1);
-  // }
-  // console.log(await query(address, { merkle_root: { id: 10 } }));
-  await runWithdraw(recipient, 1);
+  // await runWithdraw(recipient, 1);
 })();
