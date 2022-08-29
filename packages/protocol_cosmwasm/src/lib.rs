@@ -1,6 +1,5 @@
 pub mod error;
 pub mod executor;
-pub mod field_ops;
 pub mod keccak;
 pub mod mixer;
 pub mod mixer_verifier;
