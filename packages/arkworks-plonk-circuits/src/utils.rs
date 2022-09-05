@@ -45,8 +45,7 @@ pub fn prove<
     // gadget: fn(&mut StandardComposer<E::Fr, P>),
     gadget: &mut T,
     ck_bytes: &[u8],
-    verifier_public_inputs: Option<Vec<E::Fr>>,
-) -> Result<(Vec<u8>, Vec<u8>), Error> {
+) -> Result<Vec<u8>, Error> {
     let ck = CommitterKey::deserialize(ck_bytes).unwrap();
 
     let proof = {
@@ -65,25 +64,26 @@ pub fn prove<
     let mut proof_bytes = vec![];
     proof.serialize(&mut proof_bytes).unwrap();
 
+    Ok(proof_bytes)
+}
+
+pub fn get_public_bytes<
+    E: PairingEngine,
+    P: TEModelParameters<BaseField = E::Fr>,
+    T: FnMut(&mut StandardComposer<E::Fr, P>) -> Result<(), Error>,
+>(
+    // gadget: fn(&mut StandardComposer<E::Fr, P>),
+    gadget: &mut T,
+) -> Result<Vec<u8>, Error> {
     // Fill a composer to extract the public_inputs
     let mut composer = StandardComposer::<E::Fr, P>::new();
     let _ = gadget(&mut composer);
-    let public_inputs = match verifier_public_inputs {
-        Some(pi) => {
-            // The provided values need to be turned into a dense public input vector,
-            // which means putting each value in the position corresponding to its gate
-            let mut pi_dense = PublicInputs::new();
-            for (i, val) in pi.iter().enumerate() {
-                pi_dense.insert(i, *val);
-            }
-            pi_dense
-        }
-        None => composer.get_pi().to_owned(),
-    };
+    let public_inputs = composer.get_pi().to_owned();
+
     let mut public_bytes = vec![];
     public_inputs.serialize(&mut public_bytes).unwrap();
 
-    Ok((proof_bytes, public_bytes))
+    Ok(public_bytes)
 }
 
 pub fn get_pvk<

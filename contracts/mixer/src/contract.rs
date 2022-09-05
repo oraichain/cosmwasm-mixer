@@ -1,3 +1,7 @@
+use ark_bn254::Bn254;
+use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
+use ark_ff::PrimeField;
+use arkworks_plonk_gadgets::add_public_input_variable;
 use cosmwasm_std::{
     attr, from_binary, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     HandleResponse, HumanAddr, InitResponse, MessageInfo, MigrateResponse, StdError, StdResult,
@@ -5,6 +9,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
+use arkworks_plonk_circuits::utils::get_public_bytes;
 use protocol_cosmwasm::error::ContractError;
 use protocol_cosmwasm::keccak::Keccak256;
 use protocol_cosmwasm::mixer::{
@@ -274,14 +279,19 @@ pub fn withdraw(
         Keccak256::hash(&arbitrary_data_bytes).map_err(|_| ContractError::HashError)?;
 
     // Join the public input bytes
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(&msg.nullifier_hash);
-    bytes.extend_from_slice(&msg.root);
-    bytes.extend_from_slice(&arbitrary_input);
+    let public_bytes = get_public_bytes::<Bn254, JubjubParameters, _>(&mut |c| {
+        Ok({
+            // Public Inputs
+            add_public_input_variable(c, Fq::from_le_bytes_mod_order(&nullifier_hash_bytes));
+            add_public_input_variable(c, Fq::from_le_bytes_mod_order(&root_bytes));
+            add_public_input_variable(c, Fq::from_le_bytes_mod_order(&arbitrary_input));
+        })
+    })
+    .map_err(|_| ContractError::InvalidArbitraryData)?;
 
     // Verify the proof
     let verifier = MIXERVERIFIER.load(deps.storage)?;
-    let result = verify(verifier, bytes, proof_bytes_vec)?;
+    let result = verify(verifier, public_bytes, proof_bytes_vec)?;
 
     if !result {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -385,11 +395,11 @@ fn is_known_nullifier(store: &dyn Storage, nullifier: &[u8; 32]) -> bool {
 
 fn verify(
     verifier: MixerVerifier,
-    public_input: Vec<u8>,
+    public_bytes: Vec<u8>,
     proof_bytes: Vec<u8>,
 ) -> Result<bool, ContractError> {
     verifier
-        .verify(public_input, proof_bytes)
+        .verify(public_bytes, proof_bytes)
         .map_err(|_| ContractError::VerifyError)
 }
 

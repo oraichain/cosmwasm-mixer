@@ -36,11 +36,7 @@ pub mod poseidon {
     use super::hasher::ArkworksPoseidonHasherBn254;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
-    pub struct Poseidon {
-        hasher_params_width_3_bytes: Vec<u8>,
-        hasher_params_width_4_bytes: Vec<u8>,
-        hasher_params_width_5_bytes: Vec<u8>,
-    }
+    pub struct Poseidon(Vec<u8>);
 
     /// The hash error types.
     #[derive(Debug)]
@@ -56,35 +52,16 @@ pub mod poseidon {
 
     impl Poseidon {
         pub fn new() -> Self {
-            Self {
-                hasher_params_width_3_bytes: setup_params::<Bn254Fr>(Curve::Bn254, 5, 3).to_bytes(),
-                hasher_params_width_4_bytes: setup_params::<Bn254Fr>(Curve::Bn254, 5, 4).to_bytes(),
-                hasher_params_width_5_bytes: setup_params::<Bn254Fr>(Curve::Bn254, 5, 5).to_bytes(),
-            }
+            Self(setup_params::<Bn254Fr>(Curve::Bn254, 5, 3).to_bytes())
         }
 
         pub fn hash(&self, inputs: Vec<[u8; 32]>) -> Result<[u8; 32]> {
-            let num_inputs = inputs.len();
             let mut packed_inputs = Vec::new();
             for inp in inputs {
                 packed_inputs.extend_from_slice(&inp);
             }
 
-            let hash_result = match num_inputs {
-                2 => ArkworksPoseidonHasherBn254::hash(
-                    &packed_inputs,
-                    &self.hasher_params_width_3_bytes,
-                ),
-                3 => ArkworksPoseidonHasherBn254::hash(
-                    &packed_inputs,
-                    &self.hasher_params_width_4_bytes,
-                ),
-                4 => ArkworksPoseidonHasherBn254::hash(
-                    &packed_inputs,
-                    &self.hasher_params_width_5_bytes,
-                ),
-                _ => return Err(Error::InvalidHashInputWidth),
-            };
+            let hash_result = ArkworksPoseidonHasherBn254::hash(&packed_inputs, &self.0);
 
             hash_result
                 .map(|h| {

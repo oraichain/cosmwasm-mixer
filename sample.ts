@@ -175,10 +175,11 @@ const runWithdraw = async (recipient: string, index = 0) => {
 };
 
 (async () => {
-  for (let i = 0; i < 10; i++) {
-    await runDeposit(i);
-  }
-  for (let i = 0; i < 10; i++) {
-    await runWithdraw(recipient, i);
-  }
+  console.log(cosmwasmMixer.gen_commitment(getNote(1)));
+  // for (let i = 0; i < 10; i++) {
+  //   await runDeposit(i);
+  // }
+  // for (let i = 0; i < 10; i++) {
+  //   await runWithdraw(recipient, i);
+  // }
 })();

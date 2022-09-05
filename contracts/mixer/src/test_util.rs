@@ -2,56 +2,20 @@ use ark_bn254::Bn254;
 
 use ark_ff::BigInteger;
 use ark_ff::PrimeField;
-use ark_ff::Zero;
 use arkworks_native_gadgets::poseidon::FieldHasher;
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
 use arkworks_setups::common::create_merkle_tree;
 use arkworks_setups::common::keccak_256;
 use arkworks_setups::common::setup_params;
-use arkworks_setups::common::Leaf;
-use arkworks_setups::r1cs::mixer::MixerR1CSProver;
 use arkworks_setups::Curve;
-use arkworks_setups::MixerProver;
 
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use arkworks_plonk_circuits::mixer::MixerCircuit;
 use arkworks_plonk_circuits::utils::prove;
 use codec::Encode;
 use plonk_core::circuit::Circuit;
-use protocol_cosmwasm::mixer_verifier::MixerVerifier;
-use wasm_utils::{
-    proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
-    types::{Backend, Curve as WasmCurve},
-    DEFAULT_LEAF, TREE_HEIGHT,
-};
-type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
-
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
-pub struct Element(pub [u8; 32]);
-
-impl Element {
-    fn from_bytes(input: &[u8]) -> Self {
-        let mut buf = [0u8; 32];
-        buf.copy_from_slice(input);
-        Self(buf)
-    }
-}
-
-pub fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
-    match curve {
-        Curve::Bn254 => {
-            let vk_bytes = include_bytes!("../../../bn254/x5/vk_key.bin");
-            let pvk_bytes = include_bytes!("../../../bn254/x5/pvk_key.bin");
-            let ck_bytes = include_bytes!("../../../bn254/x5/ck_key.bin");
-
-            (ck_bytes.to_vec(), vk_bytes.to_vec(), pvk_bytes.to_vec())
-        }
-        Curve::Bls381 => {
-            unimplemented!()
-        }
-    }
-}
+use wasm_utils::{DEFAULT_LEAF, TREE_HEIGHT};
 
 pub fn setup_wasm_utils_zk_circuit(
     ck_bytes: &[u8],
@@ -64,16 +28,7 @@ pub fn setup_wasm_utils_zk_circuit(
     Vec<u8>, // root
     Vec<u8>, // nullifier
     Vec<u8>, // commitment
-    Vec<u8>, // public bytes after gadget
 ) {
-    // arbitrary seed
-    // let mut seed = [0u8; 32];
-
-    // getrandom::getrandom(&mut seed).unwrap();
-
-    // let rng = &mut rand::rngs::StdRng::from_seed(seed);
-
-    // let poseidon_native = PoseidonHash { params };
     let params = setup_params(Curve::Bn254, 5, 3);
     let poseidon_native = Poseidon::new(params);
 
@@ -96,14 +51,14 @@ pub fn setup_wasm_utils_zk_circuit(
     let nullifier_hash = poseidon_native.hash_two(&nullifier, &nullifier).unwrap();
     let leaf_hash = poseidon_native.hash_two(&secret, &nullifier).unwrap();
 
-    const TREE_HEIGHT: usize = 30usize;
     let last_index = 0;
     let leaves = [leaf_hash];
 
-    println!("last index {:?} - len {:?}", last_index, leaves.len());
-
-    let tree =
-        create_merkle_tree::<Fq, Poseidon<Fq>, TREE_HEIGHT>(&poseidon_native, &leaves, &[0u8; 32]);
+    let tree = create_merkle_tree::<Fq, Poseidon<Fq>, TREE_HEIGHT>(
+        &poseidon_native,
+        &leaves,
+        &DEFAULT_LEAF,
+    );
     let root = tree.root();
 
     // Path
@@ -123,20 +78,12 @@ pub fn setup_wasm_utils_zk_circuit(
     let commitment = leaf_hash.into_repr().to_bytes_le();
     let root_bytes = root.into_repr().to_bytes_le();
     // Prove then verify
-    let (proof_bytes, public_bytes) =
-        prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes, None).unwrap();
+    let proof_bytes =
+        prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes).unwrap();
     (
         proof_bytes,
         root_bytes,
         nullifier_hash.into_repr().to_bytes_le(),
         commitment,
-        public_bytes,
     )
-}
-
-/// Truncate and pad 256 bit slice in reverse
-pub fn truncate_and_pad_reverse(t: &[u8]) -> Vec<u8> {
-    let mut truncated_bytes = t[12..].to_vec();
-    truncated_bytes.extend_from_slice(&[0u8; 12]);
-    truncated_bytes
 }

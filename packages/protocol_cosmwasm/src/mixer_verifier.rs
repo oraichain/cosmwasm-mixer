@@ -4,7 +4,7 @@ pub use self::mixer_verifier::MixerVerifier;
 pub mod mixer_verifier {
 
     use ark_bn254::Bn254;
-    use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
+    use ark_ed_on_bn254::EdwardsParameters as JubjubParameters;
     use serde::{Deserialize, Serialize};
 
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -57,9 +57,10 @@ pub mod mixer_verifier {
 
 #[cfg(test)]
 mod test {
-    use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+
     use arkworks_plonk_circuits::mixer::MixerCircuit;
-    use arkworks_plonk_circuits::utils::{prove, verify};
+    use arkworks_plonk_circuits::utils::{get_public_bytes, prove};
+    use arkworks_plonk_gadgets::add_public_input_variable;
     use arkworks_setups::common::{create_merkle_tree, setup_params};
 
     use std::time::Instant;
@@ -67,16 +68,12 @@ mod test {
     use ark_bn254::Bn254;
     // use ark_ed_on_bls12_381::{EdwardsParameters as JubjubParameters, Fq};
     use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
-    use ark_ff::PrimeField;
+    use ark_ff::{PrimeField, UniformRand};
     use ark_std::rand::{self, SeedableRng};
-    use arkworks_native_gadgets::{
-        ark_std::UniformRand,
-        merkle_tree::SparseMerkleTree,
-        poseidon::{sbox::PoseidonSbox, FieldHasher, Poseidon, PoseidonParameters},
-    };
+    use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
     use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
     use arkworks_utils::Curve;
-    use plonk_core::prelude::*;
+    use plonk_core::circuit::Circuit;
 
     use crate::mixer_verifier::MixerVerifier;
 
@@ -103,14 +100,13 @@ mod test {
 
         // Public data
         let arbitrary_data = Fq::rand(rng);
+
         let nullifier_hash = poseidon_native.hash_two(&nullifier, &nullifier).unwrap();
         let leaf_hash = poseidon_native.hash_two(&secret, &nullifier).unwrap();
 
         const TREE_HEIGHT: usize = 30usize;
         let last_index = 0;
         let leaves = [leaf_hash];
-
-        println!("last index {:?} - len {:?}", last_index, leaves.len());
 
         let tree = create_merkle_tree::<Fq, PoseidonHash, TREE_HEIGHT>(
             &poseidon_native,
@@ -133,15 +129,23 @@ mod test {
             poseidon_native,
         );
 
-        // let (ck_bytes, vk_bytes) = gen_keys::<Bn254, _>(rng, 1 << 17);
-
         let ck_bytes = include_bytes!("../../../bn254/x5/ck_key.bin");
 
         let mv = MixerVerifier::new();
 
         // Prove then verify
-        let (proof_bytes, public_bytes) =
-            prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes, None).unwrap();
+        let proof_bytes =
+            prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes).unwrap();
+
+        let public_bytes = get_public_bytes::<Bn254, JubjubParameters, _>(&mut |c| {
+            Ok({
+                // Public Inputs
+                add_public_input_variable(c, nullifier_hash);
+                add_public_input_variable(c, root);
+                add_public_input_variable(c, arbitrary_data);
+            })
+        })
+        .unwrap();
 
         let start = Instant::now();
 
@@ -152,7 +156,7 @@ mod test {
         println!("Verify took: {:?}", elapsed);
 
         match res {
-            Ok(b) => (),
+            Ok(_b) => (),
             Err(err) => panic!("Unexpected error: {:?}", err),
         };
     }

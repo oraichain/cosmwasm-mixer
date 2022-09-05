@@ -10,13 +10,12 @@ use arkworks_setups::Curve;
 use cosmwasm_std::testing::{mock_dependencies, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::Binary;
 use cosmwasm_std::{
-    attr, to_binary, BlockInfo, Coin, ContractInfo, CosmosMsg, Env, HumanAddr, OwnedDeps, Uint128,
-    WasmMsg,
+    attr, to_binary, BlockInfo, Coin, ContractInfo, Env, HumanAddr, OwnedDeps, Uint128,
 };
-use cw20::{Cw20HandleMsg, Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 
 use crate::contract::{handle, init};
-use crate::test_util::Element;
+use crate::test_util::setup_wasm_utils_zk_circuit;
 use protocol_cosmwasm::mixer::{Cw20HookMsg, DepositMsg, HandleMsg, InitMsg, WithdrawMsg};
 use protocol_cosmwasm::utils::truncate_and_pad;
 
@@ -30,6 +29,7 @@ const RECIPIENT: &str = "orai1kejftqzx05y9rv00lw5m76csfmx7lf9se02dz4";
 const RELAYER: &str = "orai1jrj2vh6cstqwk3pg8nkmdf0r9z0n3q3f3jk5xn";
 const FEE: u128 = 0;
 const REFUND: u128 = 0;
+const CK_BYTES: &[u8; 4194427] = include_bytes!("../../../bn254/x5/ck_key.bin");
 
 #[derive(Debug, PartialEq)]
 pub enum MixerType {
@@ -77,30 +77,6 @@ fn create_mixer(ty: MixerType) -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     deps
 }
 
-fn prepare_wasm_utils_zk_circuit(
-    curve: Curve,
-    recipient: &str,
-    relayer: &str,
-    fee: u128,
-    refund: u128,
-) -> (Vec<u8>, Element, Element, Element) {
-    let (pk_bytes, _) = crate::test_util::setup_environment(curve);
-    let recipient_bytes = recipient.as_bytes();
-    let relayer_bytes = relayer.as_bytes();
-    let fee_value = fee;
-    let refund_value = refund;
-
-    // Setup zk circuit for withdraw
-    crate::test_util::setup_wasm_utils_zk_circuit(
-        curve,
-        truncate_and_pad(recipient_bytes),
-        truncate_and_pad(relayer_bytes),
-        pk_bytes.clone(),
-        fee_value,
-        refund_value,
-    )
-}
-
 #[test]
 fn test_mixer_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
@@ -131,10 +107,8 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     let params = setup_params(Curve::Bn254, 5, 3);
     let poseidon = Poseidon::new(params);
     let res = poseidon.hash_two(&Fr::one(), &Fr::one()).unwrap();
-    let mut element: [u8; 32] = [0u8; 32];
-    element.copy_from_slice(&res.into_repr().to_bytes_le());
 
-    let element_bin = Binary::from(element.as_slice());
+    let element_bin = Binary::from(res.into_repr().to_bytes_le().as_slice());
 
     // Try the deposit with insufficient fund
     let info = mock_info("depositor", &[Coin::new(1_000_u128, NATIVE_TOKEN_DENOM)]);
@@ -194,10 +168,8 @@ fn test_mixer_should_be_able_to_deposit_cw20_token() {
     let params = setup_params(Curve::Bn254, 5, 3);
     let poseidon = Poseidon::new(params);
     let res = poseidon.hash_two(&Fr::one(), &Fr::one()).unwrap();
-    let mut element: [u8; 32] = [0u8; 32];
-    element.copy_from_slice(&res.into_repr().to_bytes_le());
 
-    let element_bin = Binary::from(element.as_slice());
+    let element_bin = Binary::from(res.into_repr().to_bytes_le().as_slice());
 
     // Try the deposit for success
     let info = mock_info(CW20_ADDRESS, &[]);
@@ -216,13 +188,15 @@ fn test_mixer_should_be_able_to_deposit_cw20_token() {
 
 #[test]
 fn test_mixer_should_work_with_wasm_utils() {
-    let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-        prepare_wasm_utils_zk_circuit(Curve::Bn254, RECIPIENT, RELAYER, FEE, REFUND);
-    let mut deps = create_mixer(MixerType::Native);
+    let (proof_bytes, root_bytes, nullifier_hash, commitment_bytes) = setup_wasm_utils_zk_circuit(
+        CK_BYTES,
+        truncate_and_pad(RECIPIENT.as_bytes()),
+        truncate_and_pad(RELAYER.as_bytes()),
+        FEE,
+        REFUND,
+    );
 
-    let proof_bytes_bin = Binary::from(proof_bytes);
-    let root_element_bin = Binary::from(root_element.0.to_vec());
-    let nullifier_hash_bin = Binary::from(nullifier_hash_element.0.to_vec());
+    let mut deps = create_mixer(MixerType::Native);
 
     // Try the deposit for success
     let info = mock_info(
@@ -230,7 +204,7 @@ fn test_mixer_should_work_with_wasm_utils() {
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(Binary::from(leaf_element.0.as_slice())),
+        commitment: Some(Binary::from(commitment_bytes.as_slice())),
     };
 
     let response = handle(
@@ -242,20 +216,15 @@ fn test_mixer_should_work_with_wasm_utils() {
     .unwrap();
     assert_eq!(response.attributes.len(), 3);
     let on_chain_root = crate::state::read_root(&deps.storage, 1).unwrap();
-    let local_root = root_element.0;
+    let local_root = root_bytes.as_slice();
 
-    println!(
-        "{:?}, {:?}, {:?}",
-        on_chain_root, root_element.0, leaf_element.0
-    );
     assert_eq!(on_chain_root, local_root);
-    println!("{:?} {:?} {:?}", on_chain_root, local_root, leaf_element.0);
 
     // Should "succeed" to withdraw tokens.
     let withdraw_msg = WithdrawMsg {
-        proof_bytes: proof_bytes_bin,
-        root: root_element_bin,
-        nullifier_hash: nullifier_hash_bin,
+        proof_bytes: Binary::from(proof_bytes.as_slice()),
+        root: Binary::from(root_bytes.as_slice()),
+        nullifier_hash: Binary::from(nullifier_hash.as_slice()),
         recipient: HumanAddr(RECIPIENT.to_string()),
         relayer: HumanAddr(RELAYER.to_string()),
         fee: Uint128::from(FEE),

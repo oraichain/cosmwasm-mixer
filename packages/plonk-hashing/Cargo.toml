@@ -27,7 +27,7 @@ ark-ff = { version = "0.3", features = ["std"] }
 ark-serialize = { version = "0.3", features = ["derive"] }
 ark-poly = "0.3"
 ark-poly-commit = "0.3"
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 itertools = { version = "0.10.1", default-features = false }
 num-traits = "0.2.14"
@@ -36,5 +36,4 @@ hashbrown = { version = "0.11.2", default-features = false, features = ["ahash"]
 ark-relations = "0.3.0"
 ark-bls12-381 = "0.3"
 ark-ed-on-bls12-381 = "0.3"
-ark-r1cs-std = "0.3.1"
 thiserror = "1.0.30"

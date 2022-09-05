@@ -18,30 +18,29 @@ tiny-keccak = { version = "2.0.2", features = ["sha3"] }
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 
-arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { version = "1.0.0", default-features = false }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }
 
 ark-ec = { version = "^0.3.0", default-features = false }
-ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false }
 
-arkworks-plonk-gadgets = { path = "../arkworks-plonk-gadgets",  default-features = false }
 
-plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
 ark-poly-commit = { version = "^0.3.0", default-features = false }
 ark-poly = { version = "^0.3.0", default-features = false }
 
 # curves
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
-plonk-hashing = { path = "../plonk-hashing" }
-getrandom = { version = "0.2", features = ["js"] }
 arkworks-plonk-circuits = { path = "../arkworks-plonk-circuits" }
+getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 hex = "0.4"
+codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 
+plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
+arkworks-plonk-gadgets = { path = "../arkworks-plonk-gadgets",  default-features = false }
 
 [dev-dependencies.arkworks-utils]
 version = "1.0.0"

@@ -24,7 +24,7 @@ ark-serialize = { version = "^0.3.0", default-features = false }
 
 [dev-dependencies]
 # curves
-ark-ed-on-bn254 = { version = "^0.3.0", default-features = false, features = [ "r1cs" ] }
+ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 plonk-hashing = { path = "../plonk-hashing" }
 getrandom = { version = "0.2", features = ["js"] }
