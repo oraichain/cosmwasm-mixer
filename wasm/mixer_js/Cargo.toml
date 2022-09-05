@@ -17,8 +17,8 @@ wasm-utils = { version = "=0.1.3" }
 js-sys = "0.3.55"
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 plonk-core = { path = "../../packages/plonk-core", features = ["trace"], default-features = false }
-arkworks-plonk-circuits = { path = "../../packages/arkworks-plonk-circuits" }
-arkworks-plonk-gadgets = { path = "../../packages/arkworks-plonk-gadgets",  default-features = false }
+plonk-circuits = { path = "../../packages/plonk-circuits" }
+plonk-gadgets = { path = "../../packages/plonk-gadgets",  default-features = false }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { version = "1.0.0", default-features = false }

@@ -1,4 +1,4 @@
-<h1 align="center">CosmWasm Mixer</h1>
+<h1 align="center">CosmWasm Mixer using Plonk</h1>
 
 ## Introduction
 

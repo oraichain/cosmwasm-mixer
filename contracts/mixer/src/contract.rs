@@ -1,15 +1,15 @@
 use ark_bn254::Bn254;
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use ark_ff::PrimeField;
-use arkworks_plonk_gadgets::add_public_input_variable;
 use cosmwasm_std::{
     attr, from_binary, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     HandleResponse, HumanAddr, InitResponse, MessageInfo, MigrateResponse, StdError, StdResult,
     Storage, WasmMsg,
 };
 use cw2::set_contract_version;
+use plonk_gadgets::add_public_input_variable;
 
-use arkworks_plonk_circuits::utils::get_public_bytes;
+use plonk_circuits::utils::get_public_bytes;
 use protocol_cosmwasm::error::ContractError;
 use protocol_cosmwasm::keccak::Keccak256;
 use protocol_cosmwasm::mixer::{

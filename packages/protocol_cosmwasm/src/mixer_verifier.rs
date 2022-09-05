@@ -38,7 +38,7 @@ pub mod mixer_verifier {
         /// This one flips the value of the stored `bool` from `true`
         /// to `false` and vice versa.
         pub fn verify(&self, public_inp_bytes: Vec<u8>, proof_bytes: Vec<u8>) -> Result<bool> {
-            arkworks_plonk_circuits::utils::verify::<Bn254, JubjubParameters>(
+            plonk_circuits::utils::verify::<Bn254, JubjubParameters>(
                 self.pvk_bytes.as_slice(),
                 self.vk_bytes.as_slice(),
                 proof_bytes,
@@ -58,10 +58,10 @@ pub mod mixer_verifier {
 #[cfg(test)]
 mod test {
 
-    use arkworks_plonk_circuits::mixer::MixerCircuit;
-    use arkworks_plonk_circuits::utils::{get_public_bytes, prove};
-    use arkworks_plonk_gadgets::add_public_input_variable;
     use arkworks_setups::common::{create_merkle_tree, setup_params};
+    use plonk_circuits::mixer::MixerCircuit;
+    use plonk_circuits::utils::{get_public_bytes, prove};
+    use plonk_gadgets::add_public_input_variable;
 
     use std::time::Instant;
     // use ark_bls12_381::Bls12_381;
@@ -71,9 +71,9 @@ mod test {
     use ark_ff::{PrimeField, UniformRand};
     use ark_std::rand::{self, SeedableRng};
     use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
-    use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
     use arkworks_utils::Curve;
     use plonk_core::circuit::Circuit;
+    use plonk_gadgets::poseidon::PoseidonGadget;
 
     use crate::mixer_verifier::MixerVerifier;
 

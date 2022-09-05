@@ -32,7 +32,7 @@ ark-poly = { version = "^0.3.0", default-features = false }
 
 # curves
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
-arkworks-plonk-circuits = { path = "../arkworks-plonk-circuits" }
+plonk-circuits = { path = "../plonk-circuits" }
 getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
@@ -40,7 +40,7 @@ hex = "0.4"
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 
 plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
-arkworks-plonk-gadgets = { path = "../arkworks-plonk-gadgets",  default-features = false }
+plonk-gadgets = { path = "../plonk-gadgets",  default-features = false }
 
 [dev-dependencies.arkworks-utils]
 version = "1.0.0"

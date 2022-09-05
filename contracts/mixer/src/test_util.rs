@@ -4,16 +4,16 @@ use ark_ff::BigInteger;
 use ark_ff::PrimeField;
 use arkworks_native_gadgets::poseidon::FieldHasher;
 use arkworks_native_gadgets::poseidon::Poseidon;
-use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
 use arkworks_setups::common::create_merkle_tree;
 use arkworks_setups::common::keccak_256;
 use arkworks_setups::common::setup_params;
 use arkworks_setups::Curve;
+use plonk_gadgets::poseidon::PoseidonGadget;
 
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
-use arkworks_plonk_circuits::mixer::MixerCircuit;
-use arkworks_plonk_circuits::utils::prove;
 use codec::Encode;
+use plonk_circuits::mixer::MixerCircuit;
+use plonk_circuits::utils::prove;
 use plonk_core::circuit::Circuit;
 use wasm_utils::{DEFAULT_LEAF, TREE_HEIGHT};
 

@@ -29,8 +29,8 @@ schemars = "0.7"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 protocol-cosmwasm = { version = "0.1.0", path = "../../packages/protocol_cosmwasm"}
-arkworks-plonk-circuits = { path = "../../packages/arkworks-plonk-circuits" }
-arkworks-plonk-gadgets = { path = "../../packages/arkworks-plonk-gadgets",  default-features = false }
+plonk-circuits = { path = "../../packages/plonk-circuits" }
+plonk-gadgets = { path = "../../packages/plonk-gadgets",  default-features = false }
 plonk-core = { path = "../../packages/plonk-core", features = ["trace"], default-features = false }
 # curve
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }

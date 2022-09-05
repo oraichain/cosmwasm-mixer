@@ -33,7 +33,7 @@
 //! 	merkle_tree::SparseMerkleTree,
 //! 	poseidon::{sbox::PoseidonSbox, Poseidon, PoseidonParameters},
 //! };
-//! use arkworks_plonk_gadgets::{
+//! use plonk_gadgets::{
 //! 	merkle_tree::PathGadget,
 //! 	poseidon::{FieldHasherGadget, PoseidonGadget},
 //! };
@@ -136,117 +136,117 @@ use plonk_core::{constraint_system::StandardComposer, error::Error, prelude::Var
 
 #[derive(Clone)]
 pub struct PathGadget<
-	F: PrimeField,
-	P: TEModelParameters<BaseField = F>,
-	HG: FieldHasherGadget<F, P>,
-	const N: usize,
+    F: PrimeField,
+    P: TEModelParameters<BaseField = F>,
+    HG: FieldHasherGadget<F, P>,
+    const N: usize,
 > {
-	path: [(Variable, Variable); N],
-	_field: PhantomData<F>,
-	_te: PhantomData<P>,
-	_hg: PhantomData<HG>,
+    path: [(Variable, Variable); N],
+    _field: PhantomData<F>,
+    _te: PhantomData<P>,
+    _hg: PhantomData<HG>,
 }
 
 impl<
-		F: PrimeField,
-		P: TEModelParameters<BaseField = F>,
-		HG: FieldHasherGadget<F, P>,
-		const N: usize,
-	> PathGadget<F, P, HG, N>
+        F: PrimeField,
+        P: TEModelParameters<BaseField = F>,
+        HG: FieldHasherGadget<F, P>,
+        const N: usize,
+    > PathGadget<F, P, HG, N>
 {
-	pub fn from_native(
-		composer: &mut StandardComposer<F, P>,
-		native: Path<F, HG::Native, N>,
-	) -> Self {
-		// Initialize the array
-		let mut path_vars = [(composer.zero_var(), composer.zero_var()); N];
+    pub fn from_native(
+        composer: &mut StandardComposer<F, P>,
+        native: Path<F, HG::Native, N>,
+    ) -> Self {
+        // Initialize the array
+        let mut path_vars = [(composer.zero_var(), composer.zero_var()); N];
 
-		for i in 0..N {
-			path_vars[i] = (
-				composer.add_input(native.path[i].0),
-				composer.add_input(native.path[i].1),
-			);
-		}
+        for i in 0..N {
+            path_vars[i] = (
+                composer.add_input(native.path[i].0),
+                composer.add_input(native.path[i].1),
+            );
+        }
 
-		PathGadget {
-			path: path_vars,
-			_field: PhantomData,
-			_te: PhantomData,
-			_hg: PhantomData,
-		}
-	}
+        PathGadget {
+            path: path_vars,
+            _field: PhantomData,
+            _te: PhantomData,
+            _hg: PhantomData,
+        }
+    }
 
-	pub fn check_membership(
-		&self,
-		composer: &mut StandardComposer<F, P>,
-		root_hash: &Variable,
-		leaf: &Variable,
-		hasher: &HG,
-	) -> Result<Variable, Error> {
-		let computed_root = self.calculate_root(composer, leaf, hasher)?;
+    pub fn check_membership(
+        &self,
+        composer: &mut StandardComposer<F, P>,
+        root_hash: &Variable,
+        leaf: &Variable,
+        hasher: &HG,
+    ) -> Result<Variable, Error> {
+        let computed_root = self.calculate_root(composer, leaf, hasher)?;
 
-		Ok(composer.is_eq_with_output(computed_root, *root_hash))
-	}
+        Ok(composer.is_eq_with_output(computed_root, *root_hash))
+    }
 
-	pub fn calculate_root(
-		&self,
-		composer: &mut StandardComposer<F, P>,
-		leaf: &Variable,
-		hash_gadget: &HG,
-	) -> Result<Variable, Error> {
-		// Check levels between leaf level and root
-		let mut previous_hash = *leaf;
+    pub fn calculate_root(
+        &self,
+        composer: &mut StandardComposer<F, P>,
+        leaf: &Variable,
+        hash_gadget: &HG,
+    ) -> Result<Variable, Error> {
+        // Check levels between leaf level and root
+        let mut previous_hash = *leaf;
 
-		for (left_hash, right_hash) in self.path.iter() {
-			// Check if previous_hash matches the correct current hash
-			let previous_is_left = composer.is_eq_with_output(previous_hash, *left_hash);
-			let left_or_right =
-				composer.conditional_select(previous_is_left, *left_hash, *right_hash);
-			composer.assert_equal(previous_hash, left_or_right);
+        for (left_hash, right_hash) in self.path.iter() {
+            // Check if previous_hash matches the correct current hash
+            let previous_is_left = composer.is_eq_with_output(previous_hash, *left_hash);
+            let left_or_right =
+                composer.conditional_select(previous_is_left, *left_hash, *right_hash);
+            composer.assert_equal(previous_hash, left_or_right);
 
-			// Update previous_hash
-			previous_hash = hash_gadget.hash_two(composer, left_hash, right_hash)?;
-		}
+            // Update previous_hash
+            previous_hash = hash_gadget.hash_two(composer, left_hash, right_hash)?;
+        }
 
-		Ok(previous_hash)
-	}
+        Ok(previous_hash)
+    }
 
-	pub fn get_index(
-		&self,
-		composer: &mut StandardComposer<F, P>,
-		root_hash: &Variable,
-		leaf: &Variable,
-		hasher: &HG,
-	) -> Result<Variable, Error> {
-		// First check that leaf is on path
-		// let is_on_path = self.check_membership(composer, root_hash, leaf, hasher)?;
-		let one = composer.add_input(F::one());
-		// composer.assert_equal(is_on_path, one);
+    pub fn get_index(
+        &self,
+        composer: &mut StandardComposer<F, P>,
+        root_hash: &Variable,
+        leaf: &Variable,
+        hasher: &HG,
+    ) -> Result<Variable, Error> {
+        // First check that leaf is on path
+        // let is_on_path = self.check_membership(composer, root_hash, leaf, hasher)?;
+        let one = composer.add_input(F::one());
+        // composer.assert_equal(is_on_path, one);
 
-		let mut index = composer.add_input(F::zero());
-		let mut two_power = composer.add_input(F::one());
-		let mut right_value: Variable;
+        let mut index = composer.add_input(F::zero());
+        let mut two_power = composer.add_input(F::one());
+        let mut right_value: Variable;
 
-		// Check the levels between leaf level and root
-		let mut previous_hash = *leaf;
+        // Check the levels between leaf level and root
+        let mut previous_hash = *leaf;
 
-		for (left_hash, right_hash) in self.path.iter() {
-			// Check if previous hash is a left node
-			let previous_is_left = composer.is_eq_with_output(previous_hash, *left_hash);
-			right_value = composer.arithmetic_gate(|gate| {
-				gate.witness(index, two_power, None).add(F::one(), F::one())
-			});
+        for (left_hash, right_hash) in self.path.iter() {
+            // Check if previous hash is a left node
+            let previous_is_left = composer.is_eq_with_output(previous_hash, *left_hash);
+            right_value = composer.arithmetic_gate(|gate| {
+                gate.witness(index, two_power, None).add(F::one(), F::one())
+            });
 
-			// Assign index based on whether prev hash is left or right
-			index = composer.conditional_select(previous_is_left, index, right_value);
-			two_power = composer
-				.arithmetic_gate(|gate| gate.witness(two_power, one, None).mul(F::one().double()));
+            // Assign index based on whether prev hash is left or right
+            index = composer.conditional_select(previous_is_left, index, right_value);
+            two_power = composer
+                .arithmetic_gate(|gate| gate.witness(two_power, one, None).mul(F::one().double()));
 
-			previous_hash = hasher.hash_two(composer, left_hash, right_hash)?;
-		}
-		//This line confirms that the path is consistent with the given merkle root
-		composer.assert_equal(previous_hash, *root_hash);
+            previous_hash = hasher.hash_two(composer, left_hash, right_hash)?;
+        }
+        //This line confirms that the path is consistent with the given merkle root
+        composer.assert_equal(previous_hash, *root_hash);
 
-		Ok(index)
-	}
+        Ok(index)
+    }
 }

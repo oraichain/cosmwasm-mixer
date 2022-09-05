@@ -8,13 +8,13 @@ use arkworks_native_gadgets::{
     merkle_tree::SparseMerkleTree,
     poseidon::{sbox::PoseidonSbox, FieldHasher, Poseidon, PoseidonParameters},
 };
-use arkworks_plonk_circuits::mixer::MixerCircuit;
-use arkworks_plonk_circuits::utils::{gen_keys, get_pvk};
-use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
 use arkworks_utils::{
     bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,
 };
+use plonk_circuits::mixer::MixerCircuit;
+use plonk_circuits::utils::{gen_keys, get_pvk};
 use plonk_core::prelude::*;
+use plonk_gadgets::poseidon::PoseidonGadget;
 use std::{env::current_dir, fs::write, path::Path};
 
 // type PoseidonHash = Poseidon<Fq>;
