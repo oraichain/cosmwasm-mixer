@@ -39,6 +39,9 @@ plonk-hashing = { path = "../plonk-hashing" }
 getrandom = { version = "0.2", features = ["js"] }
 arkworks-plonk-circuits = { path = "../arkworks-plonk-circuits" }
 
+[dev-dependencies]
+hex = "0.4"
+
 
 [dev-dependencies.arkworks-utils]
 version = "1.0.0"

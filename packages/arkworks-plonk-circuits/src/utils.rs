@@ -1,105 +1,18 @@
-use std::time::Instant;
-
 use ark_ec::{models::TEModelParameters, PairingEngine};
-use ark_ff::{BigInteger, PrimeField};
 use ark_poly::polynomial::univariate::DensePolynomial;
 use ark_poly_commit::{
-    kzg10::{UniversalParams, KZG10},
+    kzg10::UniversalParams,
     sonic_pc::{CommitterKey, SonicKZG10, VerifierKey},
     PolynomialCommitment,
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_std::{rand::Rng, test_rng, vec::Vec};
+
 use plonk_core::{
     prelude::*,
     proof_system::{pi::PublicInputs, Prover, Verifier, VerifierKey as PlonkVerifierKey},
 };
 
-use ark_ec::{AffineCurve, ProjectiveCurve};
-use ark_ff::{One, UniformRand, Zero};
 use ark_std::rand::RngCore;
-use ark_std::{convert::TryInto, marker::PhantomData, ops::Div, vec};
-
-// A helper function to prove/verify plonk circuits
-pub(crate) fn gadget_tester<
-    E: PairingEngine,
-    P: TEModelParameters<BaseField = E::Fr>,
-    C: Circuit<E::Fr, P>,
->(
-    circuit: &mut C,
-    n: usize,
-) -> Result<(), Error> {
-    let rng = &mut test_rng();
-    // Common View
-    let universal_params = KZG10::<E, DensePolynomial<E::Fr>>::setup(2 * n, false, rng)?;
-    // Provers View
-    let (proof, public_inputs) = {
-        // Create a prover struct
-        let mut prover: Prover<E::Fr, P, SonicKZG10<E, DensePolynomial<<E as PairingEngine>::Fr>>> =
-            Prover::new(b"demo");
-
-        // Additionally key the transcript
-        prover.key_transcript(b"key", b"additional seed information");
-
-        // Add gadgets
-        circuit.gadget(&mut prover.mut_cs())?;
-
-        // Commit Key
-        let (ck, _) = SonicKZG10::<E, DensePolynomial<E::Fr>>::trim(
-            &universal_params,
-            prover.circuit_bound() + 6,
-            0,
-            None,
-        )
-        .unwrap();
-        // Preprocess circuit
-        prover.preprocess(&ck)?;
-
-        // Once the prove method is called, the public inputs are cleared
-        // So pre-fetch these before calling Prove
-        // let public_inputs = prover.mut_cs().get_pi();
-        //? let lookup_table = prover.mut_cs().lookup_table.clone();
-
-        // Compute Proof
-        (prover.prove(&ck)?, prover.mut_cs().get_pi().clone())
-    };
-    // Verifiers view
-    //
-    // Create a Verifier object
-    let mut verifier = Verifier::new(b"demo");
-
-    // Additionally key the transcript
-    verifier.key_transcript(b"key", b"additional seed information");
-
-    // Add gadgets
-    circuit.gadget(&mut verifier.mut_cs())?;
-
-    // Compute Commit and Verifier Key
-    let (sonic_ck, sonic_vk) = SonicKZG10::<E, DensePolynomial<E::Fr>>::trim(
-        &universal_params,
-        verifier.circuit_bound(),
-        0,
-        None,
-    )
-    .unwrap();
-
-    // Preprocess circuit
-    verifier.preprocess(&sonic_ck)?;
-
-    // Verify proof
-    Ok(verifier.verify(&proof, &sonic_vk, &public_inputs)?)
-}
-
-// pub fn prove<E: PairingEngine,
-// P: TEModelParameters<BaseField = E::Fr>,
-// T: FnMut(&mut StandardComposer<E::Fr, P>) -> Result<(), Error>,>(
-// 	gadget: &mut T,
-// 	max_degree: usize,
-// 	verifier_public_inputs: Option<Vec<E::Fr>>,
-
-// ) -> result<(),Error> {
-
-// }
 
 pub fn gen_keys<E: PairingEngine, R: RngCore>(
     rng: &mut R,
@@ -170,27 +83,40 @@ pub fn prove<
     let mut public_bytes = vec![];
     public_inputs.serialize(&mut public_bytes).unwrap();
 
+    Ok((proof_bytes, public_bytes))
+}
+
+pub fn get_pvk<
+    E: PairingEngine,
+    P: TEModelParameters<BaseField = E::Fr>,
+    T: FnMut(&mut StandardComposer<E::Fr, P>) -> Result<(), Error>,
+>(
+    gadget: &mut T,
+    ck_bytes: &[u8],
+) -> Result<Vec<u8>, Error> {
     // Verifier's view
 
     // Create a Verifier object
 
-    // let mut verifier =
-    // 	Verifier::<E::Fr, P, SonicKZG10<E, DensePolynomial<E::Fr>>>::new(b"test circuit");
-    // verifier.key_transcript(b"key", b"additional seed information");
-    // // Add gadgets
-    // let _ = gadget(verifier.mut_cs());
+    let mut verifier =
+        Verifier::<E::Fr, P, SonicKZG10<E, DensePolynomial<E::Fr>>>::new(b"test circuit");
+    verifier.key_transcript(b"key", b"additional seed information");
+    // Add gadgets
+    let _ = gadget(verifier.mut_cs());
 
-    // // Preprocess circuit
-    // verifier.preprocess(&ck)?;
-    // let mut pvk_bytes = vec![];
-    // verifier
-    // 	.verifier_key
-    // 	.as_ref()
-    // 	.unwrap()
-    // 	.serialize(&mut pvk_bytes)
-    // 	.unwrap();
+    let ck = CommitterKey::deserialize(ck_bytes).unwrap();
 
-    Ok((proof_bytes, public_bytes))
+    // Preprocess circuit
+    verifier.preprocess(&ck)?;
+    let mut pvk_bytes = vec![];
+    verifier
+        .verifier_key
+        .as_ref()
+        .unwrap()
+        .serialize(&mut pvk_bytes)
+        .unwrap();
+
+    Ok(pvk_bytes)
 }
 
 pub fn verify<E: PairingEngine, P: TEModelParameters<BaseField = E::Fr>>(

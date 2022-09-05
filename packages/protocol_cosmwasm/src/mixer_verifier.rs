@@ -57,28 +57,25 @@ pub mod mixer_verifier {
 
 #[cfg(test)]
 mod test {
+    use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
     use arkworks_plonk_circuits::mixer::MixerCircuit;
     use arkworks_plonk_circuits::utils::{prove, verify};
-    use arkworks_setups::common::setup_params;
+    use arkworks_setups::common::{create_merkle_tree, setup_params};
+
     use std::time::Instant;
     // use ark_bls12_381::Bls12_381;
     use ark_bn254::Bn254;
     // use ark_ed_on_bls12_381::{EdwardsParameters as JubjubParameters, Fq};
     use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
-    use ark_ff::{BigInteger, Field, PrimeField};
-    use ark_std::{
-        rand::{self, SeedableRng},
-        test_rng,
-    };
+    use ark_ff::PrimeField;
+    use ark_std::rand::{self, SeedableRng};
     use arkworks_native_gadgets::{
         ark_std::UniformRand,
         merkle_tree::SparseMerkleTree,
         poseidon::{sbox::PoseidonSbox, FieldHasher, Poseidon, PoseidonParameters},
     };
     use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
-    use arkworks_utils::{
-        bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,
-    };
+    use arkworks_utils::Curve;
     use plonk_core::prelude::*;
 
     use crate::mixer_verifier::MixerVerifier;
@@ -94,47 +91,39 @@ mod test {
 
         let rng = &mut rand::rngs::StdRng::from_seed(seed);
 
-        let curve = Curve::Bn254;
-
-        // let params = setup_params(curve, 5, 3);
-
         // let poseidon_native = PoseidonHash { params };
         let params = setup_params(Curve::Bn254, 5, 3);
         let poseidon_native = Poseidon::new(params);
 
-        // Randomly generated secrets
-        let secret = Fq::rand(rng);
-        let nullifier = Fq::rand(rng);
+        let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+        let raw = hex::decode(&note_secret).unwrap();
+
+        let secret = Fq::from_le_bytes_mod_order(&raw[0..32]);
+        let nullifier = Fq::from_le_bytes_mod_order(&raw[32..64]);
 
         // Public data
         let arbitrary_data = Fq::rand(rng);
         let nullifier_hash = poseidon_native.hash_two(&nullifier, &nullifier).unwrap();
         let leaf_hash = poseidon_native.hash_two(&secret, &nullifier).unwrap();
 
-        // Create a tree whose leaves are already populated with 2^HEIGHT - 1 random
-        // scalars, then add leaf_hash as the final leaf
-        const HEIGHT: usize = 6usize;
-        let last_index = 1 << (HEIGHT - 1) - 1;
-        let mut leaves = [Fq::from(0u8); 1 << (HEIGHT - 1)];
-        for i in 0..last_index {
-            leaves[i] = Fq::rand(rng);
-        }
-        leaves[last_index] = leaf_hash;
-        let tree = SparseMerkleTree::<Fq, PoseidonHash, HEIGHT>::new_sequential(
-            &leaves,
-            &poseidon_native,
-            &[0u8; 32],
-        )
-        .unwrap();
-        let root = tree.root();
+        const TREE_HEIGHT: usize = 30usize;
+        let last_index = 0;
+        let leaves = [leaf_hash];
 
-        println!("commitment: {:?}", leaf_hash.into_repr().to_bytes_le());
+        println!("last index {:?} - len {:?}", last_index, leaves.len());
+
+        let tree = create_merkle_tree::<Fq, PoseidonHash, TREE_HEIGHT>(
+            &poseidon_native,
+            &leaves,
+            &[0u8; 32],
+        );
+        let root = tree.root();
 
         // Path
         let path = tree.generate_membership_proof(last_index as u64);
 
         // Create MixerCircuit
-        let mut mixer = MixerCircuit::<Fq, JubjubParameters, PoseidonGadget, HEIGHT>::new(
+        let mut mixer = MixerCircuit::<Fq, JubjubParameters, PoseidonGadget, TREE_HEIGHT>::new(
             secret,
             nullifier,
             nullifier_hash,
