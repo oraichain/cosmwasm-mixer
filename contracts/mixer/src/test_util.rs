@@ -1,16 +1,30 @@
 use ark_bn254::Bn254;
+
+use ark_ff::BigInteger;
+use ark_ff::PrimeField;
+use ark_ff::Zero;
+use arkworks_native_gadgets::poseidon::FieldHasher;
+use arkworks_native_gadgets::poseidon::Poseidon;
+use arkworks_plonk_gadgets::poseidon::PoseidonGadget;
+use arkworks_setups::common::create_merkle_tree;
+use arkworks_setups::common::keccak_256;
+use arkworks_setups::common::setup_params;
 use arkworks_setups::common::Leaf;
 use arkworks_setups::r1cs::mixer::MixerR1CSProver;
 use arkworks_setups::Curve;
 use arkworks_setups::MixerProver;
 
-// wasm-utils dependencies
+use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
+use arkworks_plonk_circuits::mixer::MixerCircuit;
+use arkworks_plonk_circuits::utils::prove;
+use codec::Encode;
+use plonk_core::circuit::Circuit;
+use protocol_cosmwasm::mixer_verifier::MixerVerifier;
 use wasm_utils::{
     proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
     types::{Backend, Curve as WasmCurve},
     DEFAULT_LEAF, TREE_HEIGHT,
 };
-
 type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
@@ -24,74 +38,14 @@ impl Element {
     }
 }
 
-pub fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>) {
+pub fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     match curve {
         Curve::Bn254 => {
-            let pk_bytes = include_bytes!("../../../bn254/x5/proving_key.bin");
-            let vk_bytes = include_bytes!("../../../bn254/x5/verifying_key.bin");
+            let vk_bytes = include_bytes!("../../../bn254/x5/vk_key.bin");
+            let pvk_bytes = include_bytes!("../../../bn254/x5/pvk_key.bin");
+            let ck_bytes = include_bytes!("../../../bn254/x5/ck_key.bin");
 
-            (pk_bytes.to_vec(), vk_bytes.to_vec())
-        }
-        Curve::Bls381 => {
-            unimplemented!()
-        }
-    }
-}
-
-pub fn setup_zk_circuit(
-    index: u64,
-    curve: Curve,
-    recipient_bytes: Vec<u8>,
-    relayer_bytes: Vec<u8>,
-    pk_bytes: Vec<u8>,
-    fee_value: u128,
-    refund_value: u128,
-) -> (
-    Vec<u8>, // proof bytes
-    Element, // root
-    Element, // nullifier_hash
-    Element, // leaf
-) {
-    let rng = &mut ark_std::test_rng();
-
-    match curve {
-        Curve::Bn254 => {
-            // fit inputs to the curve.
-            let Leaf {
-                secret_bytes,
-                nullifier_bytes,
-                leaf_bytes,
-                nullifier_hash_bytes,
-                ..
-            } = MixerR1CSProverBn254_30::create_random_leaf(curve, rng).unwrap();
-
-            let leaves = vec![leaf_bytes.clone()];
-            let proof = MixerR1CSProverBn254_30::create_proof(
-                curve,
-                secret_bytes,
-                nullifier_bytes,
-                leaves,
-                index,
-                recipient_bytes.clone(),
-                relayer_bytes.clone(),
-                fee_value,
-                refund_value,
-                pk_bytes,
-                DEFAULT_LEAF,
-                rng,
-            )
-            .unwrap();
-
-            let leaf_element = Element::from_bytes(&leaf_bytes);
-            let nullifier_hash_element = Element::from_bytes(&nullifier_hash_bytes);
-            let root_element = Element::from_bytes(&proof.root_raw);
-
-            (
-                proof.proof,
-                root_element,
-                nullifier_hash_element,
-                leaf_element,
-            )
+            (ck_bytes.to_vec(), vk_bytes.to_vec(), pvk_bytes.to_vec())
         }
         Curve::Bls381 => {
             unimplemented!()
@@ -100,68 +54,84 @@ pub fn setup_zk_circuit(
 }
 
 pub fn setup_wasm_utils_zk_circuit(
-    curve: Curve,
+    ck_bytes: &[u8],
     recipient_bytes: Vec<u8>,
     relayer_bytes: Vec<u8>,
-    pk_bytes: Vec<u8>,
     fee_value: u128,
     refund_value: u128,
 ) -> (
-    Vec<u8>, // proof bytes
-    Element, // root
-    Element, // nullifier_hash
-    Element, // leaf
+    Vec<u8>, // proof
+    Vec<u8>, // root
+    Vec<u8>, // nullifier
+    Vec<u8>, // commitment
+    Vec<u8>, // public bytes after gadget
 ) {
-    match curve {
-        Curve::Bn254 => {
-            let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
-            let raw = hex::decode(&note_secret).unwrap();
-            let secret = &raw[0..32];
-            let nullifier = &raw[32..64];
-            let leaf = MixerR1CSProverBn254_30::create_leaf_with_privates(
-                curve,
-                secret.to_vec(),
-                nullifier.to_vec(),
-            )
-            .unwrap();
+    // arbitrary seed
+    // let mut seed = [0u8; 32];
 
-            let leaves = vec![leaf.leaf_bytes];
+    // getrandom::getrandom(&mut seed).unwrap();
 
-            let mixer_proof_input = MixerProofInput {
-                exponentiation: 5,
-                width: 3,
-                curve: WasmCurve::Bn254,
-                backend: Backend::Arkworks,
-                secret: secret.to_vec(),
-                nullifier: nullifier.to_vec(),
-                recipient: recipient_bytes.clone(),
-                relayer: relayer_bytes.clone(),
-                pk: pk_bytes,
-                refund: refund_value,
-                fee: fee_value,
-                chain_id: 0,
-                leaves,
-                leaf_index: 0,
-            };
-            let js_proof_inputs = JsProofInput {
-                inner: ProofInput::Mixer(mixer_proof_input),
-            };
-            let proof = generate_proof_js(js_proof_inputs).unwrap();
-            let root_element = Element::from_bytes(&proof.root);
-            let nullifier_hash_element = Element::from_bytes(&proof.nullifier_hash);
-            let leaf_element = Element::from_bytes(&proof.leaf);
+    // let rng = &mut rand::rngs::StdRng::from_seed(seed);
 
-            (
-                proof.proof,
-                root_element,
-                nullifier_hash_element,
-                leaf_element,
-            )
-        }
-        Curve::Bls381 => {
-            unimplemented!()
-        }
-    }
+    // let poseidon_native = PoseidonHash { params };
+    let params = setup_params(Curve::Bn254, 5, 3);
+    let poseidon_native = Poseidon::new(params);
+
+    let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+    let raw = hex::decode(&note_secret).unwrap();
+
+    let secret = Fq::from_le_bytes_mod_order(&raw[0..32]);
+    let nullifier = Fq::from_le_bytes_mod_order(&raw[32..64]);
+
+    // Public data
+    let mut arbitrary_data_bytes = Vec::new();
+    arbitrary_data_bytes.extend(&recipient_bytes);
+    arbitrary_data_bytes.extend(&relayer_bytes);
+    // Using encode to be compatible with on chain types
+    arbitrary_data_bytes.extend(fee_value.encode());
+    arbitrary_data_bytes.extend(refund_value.encode());
+
+    let arbitrary_data = Fq::from_le_bytes_mod_order(&keccak_256(&arbitrary_data_bytes));
+
+    let nullifier_hash = poseidon_native.hash_two(&nullifier, &nullifier).unwrap();
+    let leaf_hash = poseidon_native.hash_two(&secret, &nullifier).unwrap();
+
+    const TREE_HEIGHT: usize = 30usize;
+    let last_index = 0;
+    let leaves = [leaf_hash];
+
+    println!("last index {:?} - len {:?}", last_index, leaves.len());
+
+    let tree =
+        create_merkle_tree::<Fq, Poseidon<Fq>, TREE_HEIGHT>(&poseidon_native, &leaves, &[0u8; 32]);
+    let root = tree.root();
+
+    // Path
+    let path = tree.generate_membership_proof(last_index as u64);
+
+    // Create MixerCircuit
+    let mut mixer = MixerCircuit::<Fq, JubjubParameters, PoseidonGadget, TREE_HEIGHT>::new(
+        secret,
+        nullifier,
+        nullifier_hash,
+        path,
+        root,
+        arbitrary_data,
+        poseidon_native,
+    );
+
+    let commitment = leaf_hash.into_repr().to_bytes_le();
+    let root_bytes = root.into_repr().to_bytes_le();
+    // Prove then verify
+    let (proof_bytes, public_bytes) =
+        prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes, None).unwrap();
+    (
+        proof_bytes,
+        root_bytes,
+        nullifier_hash.into_repr().to_bytes_le(),
+        commitment,
+        public_bytes,
+    )
 }
 
 /// Truncate and pad 256 bit slice in reverse

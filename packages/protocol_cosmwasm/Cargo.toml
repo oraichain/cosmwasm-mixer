@@ -27,14 +27,14 @@ ark-ec = { version = "^0.3.0", default-features = false }
 ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false }
 
-arkworks-plonk-gadgets = { path = "../arkworks-plonk-gadgets", version = "1.0.0", default-features = false }
+arkworks-plonk-gadgets = { path = "../arkworks-plonk-gadgets",  default-features = false }
 
 plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
 ark-poly-commit = { version = "^0.3.0", default-features = false }
 ark-poly = { version = "^0.3.0", default-features = false }
 
 # curves
-ark-ed-on-bn254 = { version = "^0.3.0", default-features = false, features = [ "r1cs" ] }
+ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
 plonk-hashing = { path = "../plonk-hashing" }
 getrandom = { version = "0.2", features = ["js"] }
 arkworks-plonk-circuits = { path = "../arkworks-plonk-circuits" }
