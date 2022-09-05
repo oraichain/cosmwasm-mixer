@@ -202,14 +202,13 @@ mod test {
 
         // let (ck_bytes, vk_bytes) = gen_keys::<Bn254, _>(rng, 1 << 17);
 
-        let ck_bytes = include_bytes!("../../../bn254/x5/ck_key.bin").to_vec();
-        let vk_bytes = include_bytes!("../../../bn254/x5/vk_key.bin").to_vec();
-        let pvk_bytes = include_bytes!("../../../bn254/x5/pvk_key.bin").to_vec();
+        let ck_bytes = include_bytes!("../../../bn254/x5/ck_key.bin");
+        let vk_bytes = include_bytes!("../../../bn254/x5/vk_key.bin");
+        let pvk_bytes = include_bytes!("../../../bn254/x5/pvk_key.bin");
 
         // Prove then verify
         let (proof_bytes, public_bytes) =
-            prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes.clone(), None)
-                .unwrap();
+            prove::<Bn254, JubjubParameters, _>(&mut |c| mixer.gadget(c), ck_bytes, None).unwrap();
 
         let start = Instant::now();
 
@@ -220,7 +219,7 @@ mod test {
         println!("Verify took: {:?}", elapsed);
 
         match res {
-            Ok(()) => (),
+            Ok(b) => (),
             Err(err) => panic!("Unexpected error: {:?}", err),
         };
     }

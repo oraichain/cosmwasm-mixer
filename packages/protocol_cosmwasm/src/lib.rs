@@ -7,5 +7,4 @@ pub mod poseidon;
 pub mod signature_bridge;
 pub mod structs;
 pub mod utils;
-pub mod verifier;
 pub mod zeroes;
