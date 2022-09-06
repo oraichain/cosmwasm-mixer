@@ -26,7 +26,6 @@ ark-serialize = { version = "=0.3.0", default-features = false }
 # curves
 ark-ed-on-bn254 = { version = "=0.3.0", default-features = false }
 ark-bn254 = { version = "=0.3.0", default-features = false, features = [ "curve" ] }
-plonk-hashing = { path = "../plonk-hashing" }
 
 [dev-dependencies.arkworks-utils]
 version = "1.0.0"

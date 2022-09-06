@@ -10,7 +10,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 ark-ff = { version = "=0.3.0", default-features = false }
 ark-ed-on-bn254 = { version = "=0.3.0", default-features = false }
-wasm-bindgen = "0.2.78"
+wasm-bindgen = "=0.2.82"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 getrandom = { version = "0.2", features = ["js"] }
 wasm-utils = { version = "=0.1.3" }

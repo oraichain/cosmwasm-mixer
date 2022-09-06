@@ -140,7 +140,6 @@ pub fn verify<E: PairingEngine, P: TEModelParameters<BaseField = E::Fr>>(
     let public_inputs = PublicInputs::deserialize(public_bytes.as_slice()).unwrap();
 
     // Verify proof
-
     verifier.verify(&proof, &vk, &public_inputs)?;
 
     Ok(true)
