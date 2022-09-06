@@ -2,7 +2,7 @@ use ark_bn254::Bn254;
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use ark_ff::PrimeField;
 
-use ark_std::rand::{self, SeedableRng};
+use ark_std::rand::{self};
 use arkworks_native_gadgets::{
     ark_std::UniformRand,
     merkle_tree::SparseMerkleTree,
@@ -40,11 +40,7 @@ pub fn setup_params<F: PrimeField>(curve: Curve, exp: i8, width: u8) -> Poseidon
 
 fn main() {
     // arbitrary seed
-    let mut seed = [0u8; 32];
-
-    getrandom::getrandom(&mut seed).unwrap();
-
-    let rng = &mut rand::rngs::StdRng::from_seed(seed);
+    let rng = &mut rand::rngs::OsRng;
 
     let curve = Curve::Bn254;
 

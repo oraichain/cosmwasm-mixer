@@ -58,6 +58,7 @@ pub mod mixer_verifier {
 #[cfg(test)]
 mod test {
 
+    use ark_std::test_rng;
     use arkworks_setups::common::{create_merkle_tree, setup_params};
     use plonk_circuits::mixer::MixerCircuit;
     use plonk_circuits::utils::{get_public_bytes, prove};
@@ -69,7 +70,6 @@ mod test {
     // use ark_ed_on_bls12_381::{EdwardsParameters as JubjubParameters, Fq};
     use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
     use ark_ff::{PrimeField, UniformRand};
-    use ark_std::rand::{self, SeedableRng};
     use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
     use arkworks_utils::Curve;
     use plonk_core::circuit::Circuit;
@@ -82,11 +82,8 @@ mod test {
     #[test]
     fn should_verify_correct_mixer_plonk() {
         // arbitrary seed
-        let mut seed = [0u8; 32];
 
-        getrandom::getrandom(&mut seed).unwrap();
-
-        let rng = &mut rand::rngs::StdRng::from_seed(seed);
+        let rng = &mut test_rng();
 
         // let poseidon_native = PoseidonHash { params };
         let params = setup_params(Curve::Bn254, 5, 3);

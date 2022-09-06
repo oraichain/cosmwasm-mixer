@@ -33,7 +33,6 @@ ark-poly = { version = "=0.3.0", default-features = false }
 # curves
 ark-ed-on-bn254 = { version = "=0.3.0", default-features = false }
 plonk-circuits = { path = "../plonk-circuits" }
-getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 hex = "0.4"
