@@ -82,7 +82,6 @@ pub enum ContractError {
     #[error("Mapping item not found")]
     ItemNotFound,
 
-    /*  ------ Anchor errors ------ */
     #[error("Invalid merkle roots")]
     InvaidMerkleRoots,
 
@@ -91,9 +90,6 @@ pub enum ContractError {
 
     #[error("Invalid withdraw proof")]
     InvalidWithdrawProof,
-
-    #[error("No anchor found")]
-    NoAnchorFound,
 
     #[error("Invalid arbitrary data passed")]
     InvalidArbitraryData,
@@ -109,31 +105,6 @@ pub enum ContractError {
 
     #[error("Nonce must be greater than current nonce. Nonce must not increment more than 1048")]
     InvalidNonce,
-
-    /*  ------ VAnchor errors ------ */
-    #[error("Invalid execution entry")]
-    InvalidExecutionEntry,
-
-    #[error("Invalid deposit amount")]
-    InvalidDepositAmount,
-
-    #[error("Invalid withdraw amount")]
-    InvalidWithdrawAmount,
-
-    #[error("Invalid ext data")]
-    InvalidExtData,
-
-    #[error("Invalid fee amount")]
-    InvalidFeeAmount,
-
-    #[error("Invalid ext amount")]
-    InvalidExtAmount,
-
-    #[error("Invalid public amount")]
-    InvalidPublicAmount,
-
-    #[error("Invalid transaction proof")]
-    InvalidTxProof,
 
     /*  ------ TokenWrapper errors ------ */
     // For simplicity, it just converts all the cw20_base errors to Std error.

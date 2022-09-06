@@ -242,12 +242,9 @@ impl<F: PrimeField, P: TEModelParameters<BaseField = F>> FieldHasherGadget<F, P>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ark_bn254::{Bn254, Fr as Bn254Fr};
-    use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
+    use ark_bn254::Fr as Bn254Fr;
+    use ark_ed_on_bn254::Fq;
     use ark_ff::Field;
-    use ark_poly::polynomial::univariate::DensePolynomial;
-    use ark_poly_commit::{kzg10::UniversalParams, sonic_pc::SonicKZG10, PolynomialCommitment};
-    use ark_std::{test_rng, One};
     use arkworks_native_gadgets::poseidon::{sbox::PoseidonSbox, FieldHasher, PoseidonParameters};
     use arkworks_utils::{
         bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,

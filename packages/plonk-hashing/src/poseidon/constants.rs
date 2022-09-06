@@ -26,8 +26,7 @@ impl<F: PrimeField> PoseidonConstants<F> {
     pub fn generate<const WIDTH: usize>() -> Self {
         let arity = WIDTH - 1;
         let mds_matrices = MdsMatrices::new(WIDTH);
-        let (num_full_rounds, num_partial_rounds) =
-            calc_round_numbers(WIDTH, true);
+        let (num_full_rounds, num_partial_rounds) = calc_round_numbers(WIDTH, true);
 
         debug_assert_eq!(num_full_rounds % 2, 0);
         let num_half_full_rounds = num_full_rounds / 2;
@@ -53,14 +52,11 @@ impl<F: PrimeField> PoseidonConstants<F> {
             &mds_matrices,
         );
 
-        let (pre_sparse_matrix, sparse_matrixes) = factor_to_sparse_matrixes(
-            mds_matrices.m.clone(),
-            num_partial_rounds,
-        );
+        let (pre_sparse_matrix, sparse_matrixes) =
+            factor_to_sparse_matrixes(mds_matrices.m.clone(), num_partial_rounds);
 
         assert!(
-            WIDTH * (num_full_rounds + num_partial_rounds)
-                <= round_constants.len(),
+            WIDTH * (num_full_rounds + num_partial_rounds) <= round_constants.len(),
             "Not enough round constants"
         );
 
