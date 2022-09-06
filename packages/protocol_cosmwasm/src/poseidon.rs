@@ -30,7 +30,7 @@ mod hasher {
 pub mod poseidon {
     use ark_bn254::Fr as Bn254Fr;
     use arkworks_setups::common::setup_params;
-    use arkworks_setups::Curve;
+    use arkworks_utils::Curve;
     use serde::{Deserialize, Serialize};
 
     use super::hasher::ArkworksPoseidonHasherBn254;

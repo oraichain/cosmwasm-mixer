@@ -1,16 +1,14 @@
 use ark_bn254::Bn254;
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
-use ark_ff::PrimeField;
 
 use ark_std::rand::{self};
 use arkworks_native_gadgets::{
     ark_std::UniformRand,
     merkle_tree::SparseMerkleTree,
-    poseidon::{sbox::PoseidonSbox, FieldHasher, Poseidon, PoseidonParameters},
+    poseidon::{FieldHasher, Poseidon},
 };
-use arkworks_utils::{
-    bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,
-};
+use arkworks_setups::common::setup_params;
+use arkworks_utils::Curve;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::{gen_keys, get_pvk};
 use plonk_core::prelude::*;
@@ -19,24 +17,6 @@ use std::{env::current_dir, fs::write, path::Path};
 
 // type PoseidonHash = Poseidon<Fq>;
 type PoseidonHash = Poseidon<Fq>;
-
-pub fn setup_params<F: PrimeField>(curve: Curve, exp: i8, width: u8) -> PoseidonParameters<F> {
-    let pos_data = setup_poseidon_params(curve, exp, width).unwrap();
-
-    let mds_f = bytes_matrix_to_f(&pos_data.mds);
-    let rounds_f = bytes_vec_to_f(&pos_data.rounds);
-
-    let pos = PoseidonParameters {
-        mds_matrix: mds_f,
-        round_keys: rounds_f,
-        full_rounds: pos_data.full_rounds,
-        partial_rounds: pos_data.partial_rounds,
-        sbox: PoseidonSbox(pos_data.exp),
-        width: pos_data.width,
-    };
-
-    pos
-}
 
 fn main() {
     // arbitrary seed

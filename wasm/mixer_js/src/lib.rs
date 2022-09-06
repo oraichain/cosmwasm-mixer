@@ -3,7 +3,7 @@ use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
 use arkworks_setups::common::{create_merkle_tree, keccak_256, setup_params};
-use arkworks_setups::Curve;
+use arkworks_utils::Curve;
 use js_sys::Uint8Array;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::prove;

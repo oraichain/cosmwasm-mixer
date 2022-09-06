@@ -26,12 +26,13 @@ arkworks-native-gadgets = { path = "../arkworks-native-gadgets", default-feature
 # curves
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
 plonk-circuits = { path = "../plonk-circuits", default-features = false }
+arkworks-utils = { path = "../arkworks-utils", default-features = false }
 
 [dev-dependencies]
 hex = "0.4"
-plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
+plonk-core = { path = "../plonk-core", default-features = false }
 plonk-gadgets = { path = "../plonk-gadgets",  default-features = false }
-arkworks-utils = { path = "../arkworks-utils", default-features = false, features = ["poseidon_bn254_x5_3"]}
+
 
 
 

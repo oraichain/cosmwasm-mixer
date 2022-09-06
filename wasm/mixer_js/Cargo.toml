@@ -21,6 +21,7 @@ plonk-gadgets = { path = "../../packages/plonk-gadgets",  default-features = fal
 arkworks-native-gadgets = { path = "../../packages/arkworks-native-gadgets", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { path = "../../packages/arkworks-setups", default-features = false }
+arkworks-utils = { path = "../../packages/arkworks-utils", default-features = false}
 
 
 

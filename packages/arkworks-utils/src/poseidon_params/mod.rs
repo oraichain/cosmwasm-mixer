@@ -38,6 +38,86 @@ pub fn setup_poseidon_params(
 ) -> Result<PoseidonData, FromHexError> {
     // Making params for poseidon in merkle tree
     match (curve, exp, width) {
+        #[cfg(feature = "poseidon_bls381_x3_3")]
+        (Curve::Bls381, 3, 3) => {
+            #[path = "./bls381_x3_3.rs"]
+            mod bls381_x3_3;
+            use bls381_x3_3::{
+                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
+            };
+            get_poseidon_data(
+                ROUND_CONSTS,
+                MDS_ENTRIES,
+                FULL_ROUNDS,
+                PARTIAL_ROUNDS,
+                WIDTH,
+                EXPONENTIATION,
+            )
+        }
+        #[cfg(feature = "poseidon_bn254_x3_3")]
+        (Curve::Bn254, 3, 3) => {
+            #[path = "./bn254_x3_3.rs"]
+            pub mod bn254_x3_3;
+            use bn254_x3_3::{
+                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
+            };
+            get_poseidon_data(
+                ROUND_CONSTS,
+                MDS_ENTRIES,
+                FULL_ROUNDS,
+                PARTIAL_ROUNDS,
+                WIDTH,
+                EXPONENTIATION,
+            )
+        }
+        #[cfg(feature = "poseidon_bls381_x3_5")]
+        (Curve::Bls381, 3, 5) => {
+            #[path = "./bls381_x3_5.rs"]
+            pub mod bls381_x3_5;
+            use bls381_x3_5::{
+                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
+            };
+            get_poseidon_data(
+                ROUND_CONSTS,
+                MDS_ENTRIES,
+                FULL_ROUNDS,
+                PARTIAL_ROUNDS,
+                WIDTH,
+                EXPONENTIATION,
+            )
+        }
+        #[cfg(feature = "poseidon_bn254_x3_5")]
+        (Curve::Bn254, 3, 5) => {
+            #[path = "./bn254_x3_5.rs"]
+            pub mod bn254_x3_5;
+            use bn254_x3_5::{
+                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
+            };
+            get_poseidon_data(
+                ROUND_CONSTS,
+                MDS_ENTRIES,
+                FULL_ROUNDS,
+                PARTIAL_ROUNDS,
+                WIDTH,
+                EXPONENTIATION,
+            )
+        }
+        #[cfg(feature = "poseidon_bls381_x5_3")]
+        (Curve::Bls381, 5, 3) => {
+            #[path = "./bls381_x5_3.rs"]
+            pub mod bls381_x5_3;
+            use bls381_x5_3::{
+                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
+            };
+            get_poseidon_data(
+                ROUND_CONSTS,
+                MDS_ENTRIES,
+                FULL_ROUNDS,
+                PARTIAL_ROUNDS,
+                WIDTH,
+                EXPONENTIATION,
+            )
+        }
         #[cfg(feature = "poseidon_bn254_x5_3")]
         (Curve::Bn254, 5, 3) => {
             #[path = "./bn254_x5_3.rs"]

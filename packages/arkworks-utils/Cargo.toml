@@ -18,7 +18,6 @@ ark-ff = { version = "^0.3.0", default-features = false }
 [features]
 std = ["ark-std/std", "hex/std"]
 
-
 poseidon_bn254_x5_3 = []
 
 

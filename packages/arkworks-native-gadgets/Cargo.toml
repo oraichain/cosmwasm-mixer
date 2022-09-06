@@ -20,7 +20,6 @@ ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 ark-ed-on-bls12-381 = { version = "^0.3.0", default-features = false }
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false }
-arkworks-utils = {path = "../arkworks-utils", default-features = false, features = [ "poseidon_bn254_x5_3" ]}
 
 [features]
 default = ["std"]

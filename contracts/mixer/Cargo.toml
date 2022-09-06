@@ -42,6 +42,7 @@ cosmwasm-schema = "0.13.2"
 arkworks-setups = { path = "../../packages/arkworks-setups",  default-features = false }
 arkworks-native-gadgets = { path = "../../packages/arkworks-native-gadgets", default-features = false }
 plonk-core = { path = "../../packages/plonk-core", default-features = false }
+arkworks-utils = { path = "../../packages/arkworks-utils", default-features = false}
 hex = "0.4"
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]

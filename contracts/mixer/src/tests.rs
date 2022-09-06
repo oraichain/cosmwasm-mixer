@@ -5,7 +5,7 @@ use ark_std::One;
 use arkworks_native_gadgets::poseidon::FieldHasher;
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::common::setup_params;
-use arkworks_setups::Curve;
+use arkworks_utils::Curve;
 
 use cosmwasm_std::testing::{mock_dependencies, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::Binary;

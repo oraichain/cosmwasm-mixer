@@ -7,7 +7,7 @@ use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::common::create_merkle_tree;
 use arkworks_setups::common::keccak_256;
 use arkworks_setups::common::setup_params;
-use arkworks_setups::Curve;
+use arkworks_utils::Curve;
 use plonk_gadgets::poseidon::PoseidonGadget;
 
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};

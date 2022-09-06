@@ -10,27 +10,6 @@ use arkworks_utils::{
 };
 use tiny_keccak::{Hasher, Keccak};
 
-pub struct Leaf {
-    pub chain_id_bytes: Option<Vec<u8>>,
-    pub secret_bytes: Vec<u8>,
-    pub nullifier_bytes: Vec<u8>,
-    pub leaf_bytes: Vec<u8>,
-    pub nullifier_hash_bytes: Vec<u8>,
-}
-
-pub struct MixerProof {
-    pub proof: Vec<u8>,
-    pub leaf_raw: Vec<u8>,
-    pub nullifier_hash_raw: Vec<u8>,
-    pub root_raw: Vec<u8>,
-    pub public_inputs_raw: Vec<Vec<u8>>,
-}
-
-pub struct Keys {
-    pub pk: Vec<u8>,
-    pub vk: Vec<u8>,
-}
-
 pub fn keccak_256(input: &[u8]) -> Vec<u8> {
     let mut keccak = Keccak::v256();
     keccak.update(&input);
