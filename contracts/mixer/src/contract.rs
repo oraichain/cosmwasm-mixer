@@ -4,7 +4,7 @@ use ark_ff::PrimeField;
 use cosmwasm_std::{
     attr, from_binary, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
     HandleResponse, HumanAddr, InitResponse, MessageInfo, MigrateResponse, StdError, StdResult,
-    Storage, WasmMsg,
+    WasmMsg,
 };
 use cw2::set_contract_version;
 use plonk_gadgets::add_public_input_variable;
@@ -24,8 +24,8 @@ use protocol_cosmwasm::zeroes::zeroes;
 use cw20::{Cw20HandleMsg, Cw20ReceiveMsg};
 
 use crate::state::{
-    read_root, save_root, save_subtree, MerkleTree, Mixer, MIXER, MIXERVERIFIER, POSEIDON,
-    USED_NULLIFIERS,
+    mixer_read, mixer_write, nullifier_read, nullifier_write, read_root, save_root, save_subtree,
+    MerkleTree, Mixer,
 };
 
 // version info for migration info
@@ -73,13 +73,7 @@ pub fn init(
         deposit_size,
         merkle_tree,
     };
-    MIXER.save(deps.storage, &mixer)?;
-
-    // Initialize the poseidon hasher
-    POSEIDON.save(deps.storage, &Poseidon::new())?;
-
-    // Initialize the Mixer_Verifier
-    MIXERVERIFIER.save(deps.storage, &MixerVerifier::new())?;
+    mixer_write(deps.storage, &mixer)?;
 
     for i in 0..msg.merkletree_levels {
         save_subtree(deps.storage, i as u32, &zeroes(i))?;
@@ -114,7 +108,7 @@ pub fn deposit_native(
     info: MessageInfo,
     msg: DepositMsg,
 ) -> Result<HandleResponse, ContractError> {
-    let mixer = MIXER.load(deps.storage)?;
+    let mixer = mixer_read(deps.storage)?;
 
     // Validations
     if mixer.native_token_denom.is_none() {
@@ -136,10 +130,10 @@ pub fn deposit_native(
     if let Some(commitment) = msg.commitment {
         let commitment_bytes = element_encoder(commitment.as_slice());
         let mut merkle_tree = mixer.merkle_tree;
-        let poseidon = POSEIDON.load(deps.storage)?;
+        let poseidon = Poseidon::new();
         // insert commitment into merke_tree
         let inserted_index = merkle_tree.insert(poseidon, commitment_bytes, deps.storage)?;
-        MIXER.save(
+        mixer_write(
             deps.storage,
             &Mixer {
                 native_token_denom: Some(native_token_denom),
@@ -169,7 +163,7 @@ pub fn receive_cw20(
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<HandleResponse, ContractError> {
-    let mixer: Mixer = MIXER.load(deps.storage)?;
+    let mixer = mixer_read(deps.storage)?;
 
     // Validations
     if mixer.cw20_address.is_none() {
@@ -193,12 +187,12 @@ pub fn receive_cw20(
             if let Some(commitment) = commitment {
                 let mut merkle_tree = mixer.merkle_tree;
                 let commitment_bytes = element_encoder(commitment.as_slice());
-                let poseidon = POSEIDON.load(deps.storage)?;
+                let poseidon = Poseidon::new();
                 let inserted_index = merkle_tree
                     .insert(poseidon, commitment_bytes, deps.storage)
                     .map_err(|_| ContractError::MerkleTreeIsFull)?;
 
-                MIXER.save(
+                mixer_write(
                     deps.storage,
                     &Mixer {
                         native_token_denom: mixer.native_token_denom,
@@ -242,7 +236,7 @@ pub fn withdraw(
     let nullifier_hash_bytes = element_encoder(msg.nullifier_hash.as_slice());
     let proof_bytes_vec = msg.proof_bytes.to_vec();
 
-    let mixer = MIXER.load(deps.storage)?;
+    let mixer = mixer_read(deps.storage)?;
 
     // Validations
     let sent_funds = info.sent_funds;
@@ -259,7 +253,7 @@ pub fn withdraw(
         }));
     }
 
-    if is_known_nullifier(deps.storage, &nullifier_hash_bytes) {
+    if nullifier_read(deps.storage, &nullifier_hash_bytes).is_ok() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Nullifier is known".to_string(),
         }));
@@ -289,7 +283,7 @@ pub fn withdraw(
     .map_err(|_| ContractError::InvalidArbitraryData)?;
 
     // Verify the proof
-    let verifier = MIXERVERIFIER.load(deps.storage)?;
+    let verifier = MixerVerifier::new();
     let result = verify(verifier, public_bytes, proof_bytes_vec)?;
 
     if !result {
@@ -299,7 +293,10 @@ pub fn withdraw(
     }
 
     // Set used nullifier to true after successful verification
-    USED_NULLIFIERS.save(deps.storage, &msg.nullifier_hash, &true)?;
+    nullifier_write(
+        deps.storage,
+        &element_encoder(msg.nullifier_hash.as_slice()),
+    )?;
 
     // Send the funds
     let mut msgs: Vec<CosmosMsg> = vec![];
@@ -388,10 +385,6 @@ pub fn withdraw(
     })
 }
 
-fn is_known_nullifier(store: &dyn Storage, nullifier: &[u8; 32]) -> bool {
-    USED_NULLIFIERS.load(store, nullifier).is_ok()
-}
-
 fn verify(
     verifier: MixerVerifier,
     public_bytes: Vec<u8>,
@@ -411,7 +404,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 fn get_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let mixer = MIXER.load(deps.storage)?;
+    let mixer = mixer_read(deps.storage)?;
     let native_token_denom = match mixer.native_token_denom {
         Some(v) => v,
         None => "".to_string(),
@@ -429,7 +422,7 @@ fn get_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 fn get_merkle_tree_info(deps: Deps) -> StdResult<MerkleTreeInfoResponse> {
-    let mixer = MIXER.load(deps.storage)?;
+    let mixer = mixer_read(deps.storage)?;
     Ok(MerkleTreeInfoResponse {
         levels: mixer.merkle_tree.levels,
         current_root_index: mixer.merkle_tree.current_root_index,

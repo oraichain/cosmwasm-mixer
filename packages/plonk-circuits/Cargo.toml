@@ -11,7 +11,7 @@ homepage = "https://webb.tools"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-native-gadgets = { version = "=1.0.0", default-features = false }
 plonk-gadgets = { path = "../plonk-gadgets", version = "1.0.0", default-features = false }
 
 plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }

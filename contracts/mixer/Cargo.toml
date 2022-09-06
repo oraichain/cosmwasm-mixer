@@ -22,11 +22,11 @@ library = []
 
 [dependencies]
 cosmwasm-std = "0.13.2"
-cw-storage-plus = "0.5.0"
+cosmwasm-storage = { version = "0.13.2", features = ["iterator"] }
 cw2 = "0.5.0"
 cw20 = "0.5.0"
 schemars = "0.7"
-serde = { version = "1.0.127", default-features = false, features = ["derive"] }
+serde = { version = "=1.0.127", default-features = false, features = ["derive"] }
 protocol-cosmwasm = { path = "../../packages/protocol_cosmwasm"}
 plonk-circuits = { path = "../../packages/plonk-circuits" }
 plonk-gadgets = { path = "../../packages/plonk-gadgets",  default-features = false }
@@ -40,7 +40,7 @@ ark-std = { version = "=0.3.0", default-features = false }
 [dev-dependencies]
 cosmwasm-schema = "0.13.2"
 arkworks-setups = { version = "1.0.0",  default-features = false }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-native-gadgets = { version = "=1.0.0", default-features = false }
 hex = "0.4"
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]

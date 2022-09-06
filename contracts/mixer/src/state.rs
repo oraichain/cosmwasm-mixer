@@ -2,10 +2,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{HumanAddr, StdResult, Storage, Uint128};
-use cw_storage_plus::{Item, Map};
+use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
 
 use protocol_cosmwasm::error::ContractError;
-use protocol_cosmwasm::mixer_verifier::MixerVerifier;
 use protocol_cosmwasm::poseidon::Poseidon;
 use protocol_cosmwasm::structs::ROOT_HISTORY_SIZE;
 use protocol_cosmwasm::zeroes;
@@ -100,26 +99,38 @@ impl MerkleTree {
 }
 
 pub fn save_subtree(store: &mut dyn Storage, k: u32, data: &[u8; 32]) -> StdResult<()> {
-    FILLED_SUBTREES.save(store, &k.to_le_bytes(), data)
+    bucket(store, MERKLE_ROOTS_KEY).save(&k.to_le_bytes(), data)
 }
 
 pub fn read_subtree(store: &dyn Storage, k: u32) -> StdResult<[u8; 32]> {
-    FILLED_SUBTREES.load(store, &k.to_le_bytes())
+    bucket_read(store, FILLED_SUBTREES_KEY).load(&k.to_le_bytes())
 }
 
 pub fn save_root(store: &mut dyn Storage, k: u32, data: &[u8; 32]) -> StdResult<()> {
-    MERKLE_ROOTS.save(store, &k.to_le_bytes(), data)
+    bucket(store, MERKLE_ROOTS_KEY).save(&k.to_le_bytes(), data)
 }
 
 pub fn read_root(store: &dyn Storage, k: u32) -> StdResult<[u8; 32]> {
-    MERKLE_ROOTS.load(store, &k.to_le_bytes())
+    bucket_read(store, MERKLE_ROOTS_KEY).load(&k.to_le_bytes())
+}
+
+pub fn mixer_write(storage: &mut dyn Storage, data: &Mixer) -> StdResult<()> {
+    singleton(storage, MIXER_KEY).save(data)
+}
+pub fn mixer_read(storage: &dyn Storage) -> StdResult<Mixer> {
+    singleton_read(storage, MIXER_KEY).load()
+}
+
+pub fn nullifier_write(storage: &mut dyn Storage, hash: &[u8; 32]) -> StdResult<()> {
+    bucket(storage, USED_NULLIFIERS_KEY).save(hash, &true)
+}
+pub fn nullifier_read(storage: &dyn Storage, hash: &[u8; 32]) -> StdResult<bool> {
+    bucket_read(storage, USED_NULLIFIERS_KEY).load(hash)
 }
 
 // put the length bytes at the first for compatibility with legacy singleton store
-pub const MIXER: Item<Mixer> = Item::new("\u{0}\u{5}mixer");
-pub const POSEIDON: Item<Poseidon> = Item::new("\u{0}\u{8}poseidon");
-pub const MIXERVERIFIER: Item<MixerVerifier> = Item::new("\u{0}\u{14}mixer_verifier");
+pub const MIXER_KEY: &[u8] = b"mixer";
 
-pub const MERKLE_ROOTS: Map<&[u8], [u8; 32]> = Map::new("merkle_roots");
-pub const FILLED_SUBTREES: Map<&[u8], [u8; 32]> = Map::new("filled_subtrees");
-pub const USED_NULLIFIERS: Map<&[u8], bool> = Map::new("used_nullifers");
+pub const MERKLE_ROOTS_KEY: &[u8] = b"merkle_roots";
+pub const FILLED_SUBTREES_KEY: &[u8] = b"filled_subtrees";
+pub const USED_NULLIFIERS_KEY: &[u8] = b"used_nullifers";
