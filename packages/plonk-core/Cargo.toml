@@ -48,7 +48,6 @@ trace = []
 trace-print = ["trace", "std"]
 
 [dependencies]
-ark-bls12-381 = "0.3"
 ark-std = { version = "0.3", features = ["std"] }
 blake2 = "0.9"
 ark-ec = { version = "0.3", default-features = false }

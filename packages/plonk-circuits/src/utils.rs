@@ -97,7 +97,6 @@ pub fn get_pvk<
     // Verifier's view
 
     // Create a Verifier object
-
     let mut verifier =
         Verifier::<E::Fr, P, SonicKZG10<E, DensePolynomial<E::Fr>>>::new(b"test circuit");
     verifier.key_transcript(b"key", b"additional seed information");

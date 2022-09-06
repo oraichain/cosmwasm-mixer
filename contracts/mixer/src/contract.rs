@@ -21,7 +21,6 @@ use protocol_cosmwasm::poseidon::Poseidon;
 use protocol_cosmwasm::utils::{checked_sub, element_encoder, truncate_and_pad};
 use protocol_cosmwasm::zeroes::zeroes;
 
-use codec::Encode;
 use cw20::{Cw20HandleMsg, Cw20ReceiveMsg};
 
 use crate::state::{
@@ -273,8 +272,8 @@ pub fn withdraw(
     let mut arbitrary_data_bytes = Vec::new();
     arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
     arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
-    arbitrary_data_bytes.extend_from_slice(&fee.u128().encode());
-    arbitrary_data_bytes.extend_from_slice(&refund.u128().encode());
+    arbitrary_data_bytes.extend_from_slice(&fee.u128().to_le_bytes());
+    arbitrary_data_bytes.extend_from_slice(&refund.u128().to_le_bytes());
     let arbitrary_input =
         Keccak256::hash(&arbitrary_data_bytes).map_err(|_| ContractError::HashError)?;
 

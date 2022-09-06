@@ -4,7 +4,6 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
 use arkworks_setups::common::{create_merkle_tree, keccak_256, setup_params};
 use arkworks_setups::Curve;
-use codec::Encode;
 use js_sys::Uint8Array;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::prove;
@@ -80,8 +79,8 @@ pub fn gen_zk(
     arbitrary_data_bytes.extend(&truncate_and_pad(recipient_addr.as_bytes()));
     arbitrary_data_bytes.extend(&truncate_and_pad(relayer_addr.as_bytes()));
     // Using encode to be compatible with on chain types
-    arbitrary_data_bytes.extend(fee_value.encode());
-    arbitrary_data_bytes.extend(refund_value.encode());
+    arbitrary_data_bytes.extend(fee_value.to_le_bytes());
+    arbitrary_data_bytes.extend(refund_value.to_le_bytes());
 
     let arbitrary_data = Fq::from_le_bytes_mod_order(&keccak_256(&arbitrary_data_bytes));
 

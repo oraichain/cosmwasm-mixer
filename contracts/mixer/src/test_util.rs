@@ -11,7 +11,6 @@ use arkworks_setups::Curve;
 use plonk_gadgets::poseidon::PoseidonGadget;
 
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
-use codec::Encode;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::prove;
 use plonk_core::circuit::Circuit;
@@ -43,8 +42,8 @@ pub fn setup_wasm_utils_zk_circuit(
     arbitrary_data_bytes.extend(&recipient_bytes);
     arbitrary_data_bytes.extend(&relayer_bytes);
     // Using encode to be compatible with on chain types
-    arbitrary_data_bytes.extend(fee_value.encode());
-    arbitrary_data_bytes.extend(refund_value.encode());
+    arbitrary_data_bytes.extend(fee_value.to_le_bytes());
+    arbitrary_data_bytes.extend(refund_value.to_le_bytes());
 
     let arbitrary_data = Fq::from_le_bytes_mod_order(&keccak_256(&arbitrary_data_bytes));
 

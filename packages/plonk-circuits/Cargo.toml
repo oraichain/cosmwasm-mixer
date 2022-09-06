@@ -15,17 +15,17 @@ arkworks-native-gadgets = { version = "1.0.0", default-features = false }
 plonk-gadgets = { path = "../plonk-gadgets", version = "1.0.0", default-features = false }
 
 plonk-core = { path = "../plonk-core", features = ["trace"], default-features = false }
-ark-ff = { version = "^0.3.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false}
-ark-poly-commit = { version = "^0.3.0", default-features = false }
-ark-poly = { version = "^0.3.0", default-features = false }
-ark-ec = { version = "^0.3.0", default-features = false }
-ark-serialize = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "=0.3.0", default-features = false }
+ark-std = { version = "=0.3.0", default-features = false}
+ark-poly-commit = { version = "=0.3.0", default-features = false }
+ark-poly = { version = "=0.3.0", default-features = false }
+ark-ec = { version = "=0.3.0", default-features = false }
+ark-serialize = { version = "=0.3.0", default-features = false }
 
 [dev-dependencies]
 # curves
-ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-ed-on-bn254 = { version = "=0.3.0", default-features = false }
+ark-bn254 = { version = "=0.3.0", default-features = false, features = [ "curve" ] }
 plonk-hashing = { path = "../plonk-hashing" }
 getrandom = { version = "0.2", features = ["js"] }
 
