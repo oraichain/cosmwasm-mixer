@@ -71,7 +71,6 @@ mod test {
     use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
     use ark_ff::{PrimeField, UniformRand};
     use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
-    use arkworks_utils::Curve;
     use plonk_core::circuit::Circuit;
     use plonk_gadgets::poseidon::PoseidonGadget;
 
@@ -87,7 +86,7 @@ mod test {
         let rng = &mut test_rng();
 
         // let poseidon_native = PoseidonHash { params };
-        let params = setup_params(Curve::Bn254, 5, 3);
+        let params = setup_params(5, 3);
         let poseidon_native = Poseidon::new(params);
 
         let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";

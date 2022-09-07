@@ -8,7 +8,6 @@ use arkworks_native_gadgets::{
     poseidon::{FieldHasher, Poseidon},
 };
 use arkworks_setups::common::setup_params;
-use arkworks_utils::Curve;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::{gen_keys, get_pvk};
 use plonk_core::prelude::*;
@@ -22,9 +21,7 @@ fn main() {
     // arbitrary seed
     let rng = &mut rand::rngs::OsRng;
 
-    let curve = Curve::Bn254;
-
-    let params = setup_params(curve, 5, 3);
+    let params = setup_params(5, 3);
     let poseidon_native = PoseidonHash { params };
 
     // Randomly generated secrets

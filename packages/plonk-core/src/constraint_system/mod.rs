@@ -15,6 +15,7 @@ mod lookup;
 mod range;
 
 pub(crate) mod composer;
+#[cfg(test)]
 pub(crate) mod helper;
 pub(crate) mod variable;
 

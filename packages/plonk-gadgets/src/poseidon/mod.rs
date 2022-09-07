@@ -247,9 +247,6 @@ mod tests {
     use ark_ff::Field;
     use arkworks_native_gadgets::poseidon::{sbox::PoseidonSbox, FieldHasher, PoseidonParameters};
     use arkworks_setups::common::setup_params;
-    use arkworks_utils::{
-        bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,
-    };
     use plonk_core::prelude::*;
     use plonk_hashing::poseidon::poseidon_ref::{NativeSpecRef, PoseidonRef};
 
@@ -291,10 +288,8 @@ mod tests {
 
     #[test]
     fn should_verify_against_zk_garage_non_optimized_poseidon() {
-        let curve = Curve::Bn254;
-
         // Get poseidon parameters for this curve:
-        let util_params = setup_params(curve, 5, 3);
+        let util_params = setup_params(5, 3);
         let params = PoseidonParameters {
             round_keys: util_params.clone().round_keys,
             mds_matrix: util_params.clone().mds_matrix,

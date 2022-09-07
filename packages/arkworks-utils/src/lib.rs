@@ -11,12 +11,6 @@ pub mod poseidon_params;
 
 type Bytes = Vec<u8>;
 
-#[derive(Copy, Clone)]
-pub enum Curve {
-    Bls381,
-    Bn254,
-}
-
 pub fn decode_hex(s: &str) -> Result<Bytes, FromHexError> {
     let s = &s[2..];
     hex::decode(s)

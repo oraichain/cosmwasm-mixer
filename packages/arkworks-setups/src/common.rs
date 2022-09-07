@@ -1,23 +1,11 @@
 use ark_crypto_primitives::Error;
 use ark_ff::fields::PrimeField;
-use ark_std::{collections::BTreeMap, vec::Vec};
+use ark_std::collections::BTreeMap;
 use arkworks_native_gadgets::{
     merkle_tree::{Path, SparseMerkleTree},
     poseidon::{sbox::PoseidonSbox, FieldHasher, PoseidonParameters},
 };
-use arkworks_utils::{
-    bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params, Curve,
-};
-use tiny_keccak::{Hasher, Keccak};
-
-pub fn keccak_256(input: &[u8]) -> Vec<u8> {
-    let mut keccak = Keccak::v256();
-    keccak.update(&input);
-
-    let mut output = [0u8; 32];
-    keccak.finalize(&mut output);
-    output.to_vec()
-}
+use arkworks_utils::{bytes_matrix_to_f, bytes_vec_to_f, poseidon_params::setup_poseidon_params};
 
 pub type SMT<F, H, const HEIGHT: usize> = SparseMerkleTree<F, H, HEIGHT>;
 
@@ -49,8 +37,8 @@ pub fn setup_tree_and_create_path<F: PrimeField, H: FieldHasher<F>, const HEIGHT
     Ok((smt, path))
 }
 
-pub fn setup_params<F: PrimeField>(curve: Curve, exp: i8, width: u8) -> PoseidonParameters<F> {
-    let pos_data = setup_poseidon_params(curve, exp, width).unwrap();
+pub fn setup_params<F: PrimeField>(exp: i8, width: u8) -> PoseidonParameters<F> {
+    let pos_data = setup_poseidon_params(exp, width).unwrap();
 
     let mds_f = bytes_matrix_to_f(&pos_data.mds);
     let rounds_f = bytes_vec_to_f(&pos_data.rounds);

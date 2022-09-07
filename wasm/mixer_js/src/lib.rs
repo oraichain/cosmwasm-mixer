@@ -3,7 +3,6 @@ use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
 use arkworks_setups::common::{create_merkle_tree, setup_params};
-use arkworks_utils::Curve;
 use js_sys::Uint8Array;
 use plonk_circuits::mixer::MixerCircuit;
 use plonk_circuits::utils::prove;
@@ -35,7 +34,7 @@ pub fn gen_note() -> Option<Uint8Array> {
 
 #[wasm_bindgen]
 pub fn gen_commitment(note_secret: Uint8Array) -> Result<Uint8Array, JsError> {
-    let params = setup_params(Curve::Bn254, 5, 3);
+    let params = setup_params(5, 3);
     let poseidon_native = Poseidon::new(params);
     let secret = Fq::from_le_bytes_mod_order(&note_secret.slice(0, 32).to_vec());
     let nullifier = Fq::from_le_bytes_mod_order(&note_secret.slice(32, 64).to_vec());
@@ -59,7 +58,7 @@ pub fn gen_zk(
     fee: Option<String>,
     refund: Option<String>,
 ) -> Result<Vec<Uint8Array>, JsError> {
-    let params = setup_params(Curve::Bn254, 5, 3);
+    let params = setup_params(5, 3);
     let poseidon_native = Poseidon::new(params);
 
     let fee_value = u128::from_str_radix(fee.unwrap_or_default().as_str(), 10).unwrap_or(0);

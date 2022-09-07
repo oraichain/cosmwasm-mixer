@@ -5,7 +5,6 @@ use ark_std::One;
 use arkworks_native_gadgets::poseidon::FieldHasher;
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::common::setup_params;
-use arkworks_utils::Curve;
 
 use cosmwasm_std::testing::{mock_dependencies, mock_info, MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::Binary;
@@ -84,7 +83,7 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     let mut deps = create_mixer();
 
     // Initialize the mixer
-    let params = setup_params(Curve::Bn254, 5, 3);
+    let params = setup_params(5, 3);
     let poseidon = Poseidon::new(params);
     let res = poseidon.hash_two(&Fr::one(), &Fr::one()).unwrap();
 

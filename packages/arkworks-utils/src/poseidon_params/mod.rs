@@ -1,4 +1,4 @@
-use super::{parse_matrix, parse_vec, Bytes, Curve, FromHexError};
+use super::{parse_matrix, parse_vec, Bytes, FromHexError};
 
 pub use ark_std::vec::Vec;
 
@@ -31,31 +31,11 @@ impl PoseidonData {
     }
 }
 
-pub fn setup_poseidon_params(
-    curve: Curve,
-    exp: i8,
-    width: u8,
-) -> Result<PoseidonData, FromHexError> {
+pub fn setup_poseidon_params(exp: i8, width: u8) -> Result<PoseidonData, FromHexError> {
     // Making params for poseidon in merkle tree
-    match (curve, exp, width) {
-        #[cfg(feature = "poseidon_bls381_x3_3")]
-        (Curve::Bls381, 3, 3) => {
-            #[path = "./bls381_x3_3.rs"]
-            mod bls381_x3_3;
-            use bls381_x3_3::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
+    match (exp, width) {
         #[cfg(feature = "poseidon_bn254_x3_3")]
-        (Curve::Bn254, 3, 3) => {
+        (3, 3) => {
             #[path = "./bn254_x3_3.rs"]
             pub mod bn254_x3_3;
             use bn254_x3_3::{
@@ -70,24 +50,9 @@ pub fn setup_poseidon_params(
                 EXPONENTIATION,
             )
         }
-        #[cfg(feature = "poseidon_bls381_x3_5")]
-        (Curve::Bls381, 3, 5) => {
-            #[path = "./bls381_x3_5.rs"]
-            pub mod bls381_x3_5;
-            use bls381_x3_5::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
+
         #[cfg(feature = "poseidon_bn254_x3_5")]
-        (Curve::Bn254, 3, 5) => {
+        (3, 5) => {
             #[path = "./bn254_x3_5.rs"]
             pub mod bn254_x3_5;
             use bn254_x3_5::{
@@ -102,24 +67,9 @@ pub fn setup_poseidon_params(
                 EXPONENTIATION,
             )
         }
-        #[cfg(feature = "poseidon_bls381_x5_3")]
-        (Curve::Bls381, 5, 3) => {
-            #[path = "./bls381_x5_3.rs"]
-            pub mod bls381_x5_3;
-            use bls381_x5_3::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
+
         #[cfg(feature = "poseidon_bn254_x5_3")]
-        (Curve::Bn254, 5, 3) => {
+        (5, 3) => {
             #[path = "./bn254_x5_3.rs"]
             pub mod bn254_x5_3;
             use bn254_x5_3::{
@@ -135,7 +85,7 @@ pub fn setup_poseidon_params(
             )
         }
         #[cfg(feature = "poseidon_bn254_x5_2")]
-        (Curve::Bn254, 5, 2) => {
+        (5, 2) => {
             #[path = "./bn254_x5_2.rs"]
             pub mod bn254_x5_2;
             use bn254_x5_2::{
@@ -151,7 +101,7 @@ pub fn setup_poseidon_params(
             )
         }
         #[cfg(feature = "poseidon_bn254_x5_4")]
-        (Curve::Bn254, 5, 4) => {
+        (5, 4) => {
             #[path = "./bn254_x5_4.rs"]
             pub mod bn254_x5_4;
             use bn254_x5_4::{
@@ -166,24 +116,9 @@ pub fn setup_poseidon_params(
                 EXPONENTIATION,
             )
         }
-        #[cfg(feature = "poseidon_bls381_x5_5")]
-        (Curve::Bls381, 5, 5) => {
-            #[path = "./bls381_x5_5.rs"]
-            pub mod bls381_x5_5;
-            use bls381_x5_5::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
+
         #[cfg(feature = "poseidon_bn254_x5_5")]
-        (Curve::Bn254, 5, 5) => {
+        (5, 5) => {
             #[path = "./bn254_x5_5.rs"]
             pub mod bn254_x5_5;
             use bn254_x5_5::{
@@ -198,24 +133,9 @@ pub fn setup_poseidon_params(
                 EXPONENTIATION,
             )
         }
-        #[cfg(feature = "poseidon_bls381_x17_3")]
-        (Curve::Bls381, 17, 3) => {
-            #[path = "./bls381_x17_3.rs"]
-            pub mod bls381_x17_3;
-            use bls381_x17_3::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
+
         #[cfg(feature = "poseidon_bn254_x17_3")]
-        (Curve::Bn254, 17, 3) => {
+        (17, 3) => {
             #[path = "./bn254_x17_3.rs"]
             pub mod bn254_x17_3;
             use bn254_x17_3::{
@@ -230,24 +150,8 @@ pub fn setup_poseidon_params(
                 EXPONENTIATION,
             )
         }
-        #[cfg(feature = "poseidon_bls381_x17_5")]
-        (Curve::Bls381, 17, 5) => {
-            #[path = "./bls381_x17_5.rs"]
-            pub mod bls381_x17_5;
-            use bls381_x17_5::{
-                EXPONENTIATION, FULL_ROUNDS, MDS_ENTRIES, PARTIAL_ROUNDS, ROUND_CONSTS, WIDTH,
-            };
-            get_poseidon_data(
-                ROUND_CONSTS,
-                MDS_ENTRIES,
-                FULL_ROUNDS,
-                PARTIAL_ROUNDS,
-                WIDTH,
-                EXPONENTIATION,
-            )
-        }
         #[cfg(feature = "poseidon_bn254_x17_5")]
-        (Curve::Bn254, 17, 5) => {
+        (17, 5) => {
             #[path = "./bn254_x17_5.rs"]
             pub mod bn254_x17_5;
             use bn254_x17_5::{
@@ -266,16 +170,16 @@ pub fn setup_poseidon_params(
     }
 }
 
-pub fn get_poseidon_result(curve: Curve, exp: i8, width: u8) -> Result<Vec<Bytes>, FromHexError> {
-    match (curve, exp, width) {
+pub fn get_poseidon_result(exp: i8, width: u8) -> Result<Vec<Bytes>, FromHexError> {
+    match (exp, width) {
         #[cfg(feature = "poseidon_bn254_x5_5")]
-        (Curve::Bn254, 5, 5) => {
+        (5, 5) => {
             #[path = "./bn254_x5_5_result.rs"]
             pub mod bn254_x5_5_result;
             parse_vec(bn254_x5_5_result::RESULT.to_vec())
         }
         #[cfg(feature = "poseidon_bn254_x5_3")]
-        (Curve::Bn254, 5, 3) => {
+        (5, 3) => {
             #[path = "./bn254_x5_3_result.rs"]
             pub mod bn254_x5_3_result;
             parse_vec(bn254_x5_3_result::RESULT.to_vec())

@@ -11,7 +11,7 @@ pub struct Poseidon(PoseidonHash);
 impl Poseidon {
     pub fn new() -> Self {
         Self(PoseidonHash {
-            params: setup_params(arkworks_utils::Curve::Bn254, 5, 3),
+            params: setup_params(5, 3),
         })
     }
 
