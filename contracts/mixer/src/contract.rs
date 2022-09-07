@@ -130,7 +130,6 @@ pub fn withdraw(
     let refund = msg.refund;
     let root_bytes = element_encoder(msg.root.as_slice());
     let nullifier_hash_bytes = element_encoder(msg.nullifier_hash.as_slice());
-    let proof_bytes_vec = msg.proof_bytes.to_vec();
 
     let mixer = mixer_read(deps.storage)?;
 
@@ -178,7 +177,9 @@ pub fn withdraw(
 
     // Verify the proof
     let verifier = MixerVerifier::new();
-    let result = verify(verifier, public_bytes, proof_bytes_vec)?;
+    let result = verifier
+        .verify(public_bytes, msg.proof_bytes.to_vec())
+        .map_err(|_| ContractError::VerifyError)?;
 
     if !result {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -244,16 +245,6 @@ pub fn withdraw(
             attr("nullifier_hash", msg.nullifier_hash.to_base64()),
         ],
     })
-}
-
-fn verify(
-    verifier: MixerVerifier,
-    public_bytes: Vec<u8>,
-    proof_bytes: Vec<u8>,
-) -> Result<bool, ContractError> {
-    verifier
-        .verify(public_bytes, proof_bytes)
-        .map_err(|_| ContractError::VerifyError)
 }
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
