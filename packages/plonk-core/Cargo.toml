@@ -48,20 +48,20 @@ trace = []
 trace-print = ["trace", "std"]
 
 [dependencies]
-ark-std = { version = "=0.3" }
-blake2 = "0.9"
+ark-std = { version = "=0.3", default-features = false }
+blake2 = {version = "0.9", default-features = false }
 ark-ec = { version = "=0.3", default-features = false }
 ark-ff = { version = "=0.3", default-features = false }
-ark-poly = { version = "=0.3" }
-ark-poly-commit = { version = "=0.3" }
-ark-serialize = { version = "=0.3", features = ["derive"] }
+ark-poly = { version = "=0.3",default-features = false }
+ark-poly-commit = { version = "=0.3",default-features = false }
+ark-serialize = { version = "=0.3", default-features = false, features = ["derive"] }
 derivative = { version = "2.2.0", default-features = false, features = ["use_core"] }
 hashbrown = { version = "0.11.2", default-features = false, features = ["ahash"] }
 indexmap = { version = "1.8.1", default-features = false }
 itertools = { version = "0.10.1", default-features = false }
 merlin = { version = "3.0", default-features = false }
-num-traits = { version = "0.2.14" }
-getrandom = { version = "0.2", features = ["js"] }
+num-traits = { version = "0.2.14",default-features = false }
+getrandom = { version = "0.2", default-features = false, features = ["js"] }
 rand_core = {version = "0.6", default-features=false, features = ["getrandom"] }
 
 [dev-dependencies]

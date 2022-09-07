@@ -21,16 +21,14 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = "0.13.2"
-cosmwasm-storage = { version = "0.13.2" }
-cw2 = "0.5.0"
-cw20 = "0.5.0"
-schemars = "0.7"
+cosmwasm-std = {version="0.13.2",default-features = false}
+cosmwasm-storage = { version = "0.13.2",default-features = false }
+schemars = {version="0.7",default-features = false}
 serde = { version = "=1.0.127", default-features = false, features = ["derive"] }
 protocol-cosmwasm = { path = "../../packages/protocol_cosmwasm", default-features = false}
 plonk-circuits = { path = "../../packages/plonk-circuits", default-features = false }
 plonk-gadgets = { path = "../../packages/plonk-gadgets",  default-features = false }
-
+arkworks-setups = { path = "../../packages/arkworks-setups", default-features = false }
 # curve
 ark-ed-on-bn254 = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false }
@@ -38,7 +36,7 @@ ark-ff = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 
 [dev-dependencies]
-cosmwasm-schema = "0.13.2"
+cosmwasm-schema = {version="0.13.2",default-features = false}
 arkworks-setups = { path = "../../packages/arkworks-setups",  default-features = false }
 arkworks-native-gadgets = { path = "../../packages/arkworks-native-gadgets", default-features = false }
 plonk-core = { path = "../../packages/plonk-core", default-features = false }

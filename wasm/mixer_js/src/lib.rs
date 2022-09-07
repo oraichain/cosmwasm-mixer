@@ -2,7 +2,7 @@ use ark_bn254::Bn254;
 use ark_ed_on_bn254::{EdwardsParameters as JubjubParameters, Fq};
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_native_gadgets::poseidon::{FieldHasher, Poseidon};
-use arkworks_setups::common::{create_merkle_tree, keccak_256, setup_params};
+use arkworks_setups::common::{create_merkle_tree, setup_params};
 use arkworks_utils::Curve;
 use js_sys::Uint8Array;
 use plonk_circuits::mixer::MixerCircuit;
@@ -82,7 +82,7 @@ pub fn gen_zk(
     arbitrary_data_bytes.extend(fee_value.to_le_bytes());
     arbitrary_data_bytes.extend(refund_value.to_le_bytes());
 
-    let arbitrary_data = Fq::from_le_bytes_mod_order(&keccak_256(&arbitrary_data_bytes));
+    let arbitrary_data = Fq::from_le_bytes_mod_order(&arbitrary_data_bytes);
 
     let nullifier_hash = poseidon_native
         .hash_two(&nullifier, &nullifier)

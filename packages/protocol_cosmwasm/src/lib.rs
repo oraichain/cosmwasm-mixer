@@ -1,6 +1,4 @@
 pub mod error;
-pub mod executor;
-pub mod keccak;
 pub mod mixer;
 pub mod mixer_verifier;
 pub mod poseidon;

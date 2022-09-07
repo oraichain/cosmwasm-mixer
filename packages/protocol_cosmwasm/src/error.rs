@@ -53,10 +53,6 @@ pub enum ContractError {
 
     #[error("Insufficient_funds")]
     InsufficientFunds {},
-    // Add any other custom errors you like here.
-    // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
-    #[error("Invalid Cw20 Hook message")]
-    InvalidCw20HookMsg,
 
     /* -------   mixer related error  ------- */
     /// Returned if the mixer is not initialized
@@ -96,34 +92,4 @@ pub enum ContractError {
 
     #[error("Invalid nullifier that is already used")]
     AlreadyRevealedNullfier,
-
-    #[error("Edge already exists")]
-    EdgeAlreadyExists,
-
-    #[error("Too many edges")]
-    TooManyEdges,
-
-    #[error("Nonce must be greater than current nonce. Nonce must not increment more than 1048")]
-    InvalidNonce,
-
-    /*  ------ TokenWrapper errors ------ */
-    // For simplicity, it just converts all the cw20_base errors to Std error.
-    #[error("Invalid CW20 token address")]
-    InvalidCw20Token,
-}
-
-impl From<cw20_base::ContractError> for ContractError {
-    fn from(err: cw20_base::ContractError) -> Self {
-        match err {
-            cw20_base::ContractError::Std(error) => ContractError::Std(error),
-            cw20_base::ContractError::Unauthorized {}
-            | cw20_base::ContractError::CannotSetOwnAccount {}
-            | cw20_base::ContractError::InvalidZeroAmount {}
-            | cw20_base::ContractError::Expired {}
-            | cw20_base::ContractError::NoAllowance {}
-            | cw20_base::ContractError::CannotExceedCap {} => {
-                ContractError::Std(StdError::generic_err(err.to_string()))
-            }
-        }
-    }
 }

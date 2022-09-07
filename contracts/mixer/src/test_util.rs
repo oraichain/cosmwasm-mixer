@@ -5,7 +5,6 @@ use ark_ff::PrimeField;
 use arkworks_native_gadgets::poseidon::FieldHasher;
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::common::create_merkle_tree;
-use arkworks_setups::common::keccak_256;
 use arkworks_setups::common::setup_params;
 use arkworks_utils::Curve;
 use plonk_gadgets::poseidon::PoseidonGadget;
@@ -45,7 +44,7 @@ pub fn setup_wasm_utils_zk_circuit(
     arbitrary_data_bytes.extend(fee_value.to_le_bytes());
     arbitrary_data_bytes.extend(refund_value.to_le_bytes());
 
-    let arbitrary_data = Fq::from_le_bytes_mod_order(&keccak_256(&arbitrary_data_bytes));
+    let arbitrary_data = Fq::from_le_bytes_mod_order(&arbitrary_data_bytes);
 
     let nullifier_hash = poseidon_native.hash_two(&nullifier, &nullifier).unwrap();
     let leaf_hash = poseidon_native.hash_two(&secret, &nullifier).unwrap();

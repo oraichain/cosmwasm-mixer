@@ -76,6 +76,7 @@ mod test {
     use plonk_gadgets::poseidon::PoseidonGadget;
 
     use crate::mixer_verifier::MixerVerifier;
+    use crate::zeroes::DEFAULT_LEAF;
 
     type PoseidonHash = Poseidon<Fq>;
 
@@ -108,7 +109,7 @@ mod test {
         let tree = create_merkle_tree::<Fq, PoseidonHash, TREE_HEIGHT>(
             &poseidon_native,
             &leaves,
-            &[0u8; 32],
+            &DEFAULT_LEAF,
         );
         let root = tree.root();
 

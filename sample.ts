@@ -36,7 +36,7 @@ function compare(a, b) {
 
 const getLeaves = async (address: string): Promise<Uint8Array[]> => {
   const { txs } = await cosmos.get(
-    `cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
+    `cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit%27`
   );
   const leaves = txs.map((tx) =>
     Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')

@@ -1,20 +1,20 @@
+use protocol_cosmwasm::utils::element_encoder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{HumanAddr, StdResult, Storage, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read};
+use cosmwasm_std::{StdResult, Storage, Uint128};
+use cosmwasm_storage::{prefixed, prefixed_read, singleton, singleton_read};
 
 use protocol_cosmwasm::error::ContractError;
 use protocol_cosmwasm::poseidon::Poseidon;
 use protocol_cosmwasm::structs::ROOT_HISTORY_SIZE;
-use protocol_cosmwasm::zeroes;
+use protocol_cosmwasm::zeroes::{self, DEFAULT_LEAF};
 
 /// Mixer
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Mixer {
     pub deposit_size: Uint128,
-    pub cw20_address: Option<HumanAddr>,
-    pub native_token_denom: Option<String>,
+    pub native_token_denom: String,
     pub merkle_tree: MerkleTree,
 }
 
@@ -29,17 +29,18 @@ pub struct MerkleTree {
 impl MerkleTree {
     fn hash_left_right(
         &self,
-        hasher: Poseidon,
-        left: [u8; 32],
-        right: [u8; 32],
+        hasher: &Poseidon,
+        left: &[u8; 32],
+        right: &[u8; 32],
     ) -> Result<[u8; 32], ContractError> {
-        let inputs = vec![left, right];
-        hasher.hash(inputs).map_err(|_e| ContractError::HashError)
+        hasher
+            .hash(left, right)
+            .map_err(|_e| ContractError::HashError)
     }
 
     pub fn insert(
         &mut self,
-        hasher: Poseidon,
+        hasher: &Poseidon,
         leaf: [u8; 32],
         store: &mut dyn Storage,
     ) -> Result<u32, ContractError> {
@@ -58,31 +59,31 @@ impl MerkleTree {
             if current_index % 2 == 0 {
                 left = current_level_hash;
                 right = zeroes::zeroes(i);
-                save_subtree(store, i, &current_level_hash)?;
+                save_subtree(store, i, &current_level_hash);
             } else {
-                left = read_subtree(store, i).map_err(|_| ContractError::HashError)?;
+                left = read_subtree(store, i)?;
                 right = current_level_hash;
             }
 
-            current_level_hash = self.hash_left_right(hasher.clone(), left, right)?;
+            current_level_hash = self.hash_left_right(hasher, &left, &right)?;
             current_index /= 2;
         }
 
         let new_root_index = (self.current_root_index + 1) % ROOT_HISTORY_SIZE;
         self.current_root_index = new_root_index;
-        save_root(store, new_root_index, &current_level_hash)?;
+        save_root(store, new_root_index, &current_level_hash);
         self.next_index = next_index + 1;
         Ok(next_index)
     }
 
     pub fn is_known_root(&self, root: [u8; 32], store: &dyn Storage) -> bool {
-        if root == [0u8; 32] {
+        if root == DEFAULT_LEAF {
             return false;
         }
 
         let mut i = self.current_root_index;
         for _ in 0..ROOT_HISTORY_SIZE {
-            let r = read_root(store, i).unwrap_or([0u8; 32]);
+            let r = read_root(store, i);
             if r == root {
                 return true;
             }
@@ -98,20 +99,26 @@ impl MerkleTree {
     }
 }
 
-pub fn save_subtree(store: &mut dyn Storage, k: u32, data: &[u8; 32]) -> StdResult<()> {
-    bucket(store, MERKLE_ROOTS_KEY).save(&k.to_le_bytes(), data)
+pub fn save_subtree(store: &mut dyn Storage, k: u32, data: &[u8; 32]) {
+    prefixed(store, MERKLE_ROOTS_KEY).set(&k.to_le_bytes(), data)
 }
 
-pub fn read_subtree(store: &dyn Storage, k: u32) -> StdResult<[u8; 32]> {
-    bucket_read(store, FILLED_SUBTREES_KEY).load(&k.to_le_bytes())
+pub fn read_subtree(store: &dyn Storage, k: u32) -> Result<[u8; 32], ContractError> {
+    prefixed_read(store, FILLED_SUBTREES_KEY)
+        .get(&k.to_le_bytes())
+        .map(|item| element_encoder(&item))
+        .ok_or(ContractError::HashError {})
 }
 
-pub fn save_root(store: &mut dyn Storage, k: u32, data: &[u8; 32]) -> StdResult<()> {
-    bucket(store, MERKLE_ROOTS_KEY).save(&k.to_le_bytes(), data)
+pub fn save_root(store: &mut dyn Storage, k: u32, data: &[u8; 32]) {
+    prefixed(store, MERKLE_ROOTS_KEY).set(&k.to_le_bytes(), data)
 }
 
-pub fn read_root(store: &dyn Storage, k: u32) -> StdResult<[u8; 32]> {
-    bucket_read(store, MERKLE_ROOTS_KEY).load(&k.to_le_bytes())
+pub fn read_root(store: &dyn Storage, k: u32) -> [u8; 32] {
+    prefixed_read(store, MERKLE_ROOTS_KEY)
+        .get(&k.to_le_bytes())
+        .map(|item| element_encoder(&item))
+        .unwrap_or(DEFAULT_LEAF)
 }
 
 pub fn mixer_write(storage: &mut dyn Storage, data: &Mixer) -> StdResult<()> {
@@ -121,11 +128,13 @@ pub fn mixer_read(storage: &dyn Storage) -> StdResult<Mixer> {
     singleton_read(storage, MIXER_KEY).load()
 }
 
-pub fn nullifier_write(storage: &mut dyn Storage, hash: &[u8; 32]) -> StdResult<()> {
-    bucket(storage, USED_NULLIFIERS_KEY).save(hash, &true)
+pub fn nullifier_write(storage: &mut dyn Storage, hash: &[u8; 32]) {
+    prefixed(storage, USED_NULLIFIERS_KEY).set(hash, &[1u8])
 }
-pub fn nullifier_read(storage: &dyn Storage, hash: &[u8; 32]) -> StdResult<bool> {
-    bucket_read(storage, USED_NULLIFIERS_KEY).load(hash)
+pub fn nullifier_read(storage: &dyn Storage, hash: &[u8; 32]) -> bool {
+    prefixed_read(storage, USED_NULLIFIERS_KEY)
+        .get(hash)
+        .is_some()
 }
 
 // put the length bytes at the first for compatibility with legacy singleton store
