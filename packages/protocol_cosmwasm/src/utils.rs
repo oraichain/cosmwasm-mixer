@@ -1,7 +1,4 @@
-use cosmwasm_std::{StdError, StdResult, Uint128};
 use tiny_keccak::{Hasher, Keccak};
-
-use crate::error::OverflowError;
 
 /// Slice the length of the bytes array into 32bytes
 pub fn element_encoder(v: &[u8]) -> [u8; 32] {
@@ -66,17 +63,4 @@ pub fn get_chain_id_type(chain_id_type: &[u8]) -> u64 {
     #[allow(clippy::needless_borrow)]
     buf[2..8].copy_from_slice(&chain_id_type);
     u64::from_be_bytes(buf)
-}
-
-pub fn checked_sub(left: Uint128, right: Uint128) -> StdResult<Uint128> {
-    left.0.checked_sub(right.0).map(Uint128).ok_or_else(|| {
-        StdError::generic_err(
-            OverflowError {
-                operation: crate::error::OverflowOperation::Sub,
-                operand1: left.to_string(),
-                operand2: right.to_string(),
-            }
-            .to_string(),
-        )
-    })
 }

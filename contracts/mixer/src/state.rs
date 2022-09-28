@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{HumanAddr, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cw_storage_plus::{Item, Map};
 
 use protocol_cosmwasm::error::ContractError;
@@ -14,7 +14,7 @@ use protocol_cosmwasm::zeroes;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Mixer {
     pub deposit_size: Uint128,
-    pub cw20_address: Option<HumanAddr>,
+    pub cw20_address: Option<Addr>,
     pub native_token_denom: Option<String>,
     pub merkle_tree: MerkleTree,
 }

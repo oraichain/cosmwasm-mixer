@@ -1,4 +1,3 @@
-use cosmwasm_std::HumanAddr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -57,12 +56,12 @@ pub struct MerkleRootInfoResponse {
 /* ------    Handler-common responses     ------ */
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct BridgeAddrResponse {
-    pub bridge_addr: HumanAddr,
+    pub bridge_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ContractAddrResponse {
-    pub contract_addr: HumanAddr,
+    pub contract_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -72,6 +71,6 @@ pub struct ResourceIdResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct WhitelistCheckResponse {
-    pub contract_addr: HumanAddr,
+    pub contract_addr: String,
     pub is_whitelisted: bool,
 }

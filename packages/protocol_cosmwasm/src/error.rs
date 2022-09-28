@@ -1,44 +1,5 @@
 use cosmwasm_std::StdError;
-use std::fmt;
 use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum OverflowOperation {
-    Add,
-    Sub,
-    Mul,
-    Pow,
-    Shr,
-    Shl,
-}
-
-impl fmt::Display for OverflowOperation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Error, Debug, PartialEq, Eq)]
-#[error("Cannot {operation} with {operand1} and {operand2}")]
-pub struct OverflowError {
-    pub operation: OverflowOperation,
-    pub operand1: String,
-    pub operand2: String,
-}
-
-impl OverflowError {
-    pub fn new(
-        operation: OverflowOperation,
-        operand1: impl ToString,
-        operand2: impl ToString,
-    ) -> Self {
-        Self {
-            operation,
-            operand1: operand1.to_string(),
-            operand2: operand2.to_string(),
-        }
-    }
-}
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
@@ -150,7 +111,12 @@ impl From<cw20_base::ContractError> for ContractError {
             | cw20_base::ContractError::InvalidZeroAmount {}
             | cw20_base::ContractError::Expired {}
             | cw20_base::ContractError::NoAllowance {}
-            | cw20_base::ContractError::CannotExceedCap {} => {
+            | cw20_base::ContractError::CannotExceedCap {}
+            | cw20_base::ContractError::LogoTooBig {}
+            | cw20_base::ContractError::InvalidPngHeader {}
+            | cw20_base::ContractError::InvalidXmlPreamble {}
+            | cw20_base::ContractError::InvalidExpiration {}
+            | cw20_base::ContractError::DuplicateInitialBalanceAddresses {} => {
                 ContractError::Std(StdError::generic_err(err.to_string()))
             }
         }

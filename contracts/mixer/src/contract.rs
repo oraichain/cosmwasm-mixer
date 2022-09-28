@@ -1,23 +1,22 @@
 use cosmwasm_std::{
-    attr, from_binary, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    HandleResponse, HumanAddr, InitResponse, MessageInfo, MigrateResponse, StdError, StdResult,
-    Storage, WasmMsg,
+    attr, entry_point, from_binary, to_binary, BankMsg, Binary, Coin, CosmosMsg, Deps, DepsMut,
+    Env, Event, MessageInfo, Response, StdError, StdResult, Storage, WasmMsg,
 };
 use cw2::set_contract_version;
 
 use protocol_cosmwasm::error::ContractError;
 use protocol_cosmwasm::keccak::Keccak256;
 use protocol_cosmwasm::mixer::{
-    ConfigResponse, Cw20HookMsg, DepositMsg, HandleMsg, InitMsg, MerkleRootResponse,
+    ConfigResponse, Cw20HookMsg, DepositMsg, ExecuteMsg, InstantiateMsg, MerkleRootResponse,
     MerkleTreeInfoResponse, MigrateMsg, QueryMsg, WithdrawMsg,
 };
 use protocol_cosmwasm::mixer_verifier::MixerVerifier;
 use protocol_cosmwasm::poseidon::Poseidon;
-use protocol_cosmwasm::utils::{checked_sub, element_encoder, truncate_and_pad};
+use protocol_cosmwasm::utils::{element_encoder, truncate_and_pad};
 use protocol_cosmwasm::zeroes::zeroes;
 
 use codec::Encode;
-use cw20::{Cw20HandleMsg, Cw20ReceiveMsg};
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::state::{
     read_root, save_root, save_subtree, MerkleTree, Mixer, MIXER, MIXERVERIFIER, POSEIDON,
@@ -28,14 +27,15 @@ use crate::state::{
 const CONTRACT_NAME: &str = "crates.io:cosmwasm-mixer";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn init(
+#[entry_point]
+pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InitMsg,
-) -> Result<InitResponse, ContractError> {
+    msg: InstantiateMsg,
+) -> Result<Response, ContractError> {
     // Validation 1. Check if the funds are sent with this message
-    if !info.sent_funds.is_empty() {
+    if !info.funds.is_empty() {
         return Err(ContractError::UnnecessaryFunds {});
     }
 
@@ -48,7 +48,10 @@ pub fn init(
         next_index: 0,
     };
     let native_token_denom = msg.native_token_denom;
-    let cw20_address = msg.cw20_address.map(HumanAddr);
+    let cw20_address = match msg.cw20_address {
+        Some(addr) => Some(deps.api.addr_validate(addr.as_str())?),
+        None => None,
+    };
     if native_token_denom.is_some() && cw20_address.is_some() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Both the native_token_denom and cw20_address cannot be set at the same time"
@@ -83,25 +86,25 @@ pub fn init(
 
     save_root(deps.storage, 0_u32, &zeroes(msg.merkletree_levels))?;
 
-    Ok(InitResponse {
-        attributes: vec![attr("action", "instantiate"), attr("owner", info.sender)],
-        messages: vec![],
-    })
+    Ok(Response::new()
+        .add_attribute("action", "instantiate")
+        .add_attribute("owner", info.sender))
 }
 
-pub fn handle(
+#[entry_point]
+pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    msg: HandleMsg,
-) -> Result<HandleResponse, ContractError> {
+    msg: ExecuteMsg,
+) -> Result<Response, ContractError> {
     match msg {
         // Deposit the "native" tokens with commitment
-        HandleMsg::Deposit(msg) => deposit_native(deps, info, msg),
+        ExecuteMsg::Deposit(msg) => deposit_native(deps, info, msg),
         // Withdraw either "native" tokens or cw20 tokens.
-        HandleMsg::Withdraw(msg) => withdraw(deps, env, info, msg),
+        ExecuteMsg::Withdraw(msg) => withdraw(deps, info, msg),
         // Deposit the cw20 tokens with commitment
-        HandleMsg::Receive(msg) => receive_cw20(deps, info, msg),
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, info, msg),
     }
 }
 
@@ -109,7 +112,7 @@ pub fn deposit_native(
     deps: DepsMut,
     info: MessageInfo,
     msg: DepositMsg,
-) -> Result<HandleResponse, ContractError> {
+) -> Result<Response, ContractError> {
     let mixer = MIXER.load(deps.storage)?;
 
     // Validations
@@ -120,7 +123,7 @@ pub fn deposit_native(
     }
     let native_token_denom = mixer.native_token_denom.unwrap();
     let sent_tokens: Vec<Coin> = info
-        .sent_funds
+        .funds
         .into_iter()
         .filter(|x| x.denom == native_token_denom)
         .collect();
@@ -144,15 +147,13 @@ pub fn deposit_native(
                 merkle_tree,
             },
         )?;
-        return Ok(HandleResponse {
-            data: None,
-            messages: vec![],
-            attributes: vec![
+        return Ok(
+            Response::new().add_event(Event::new("mixer-deposit").add_attributes(vec![
                 attr("action", "deposit_native"),
                 attr("inserted_index", inserted_index.to_string()),
-                attr("commitment", commitment.to_base64()),
-            ],
-        });
+                attr("commitment", format!("{:?}", commitment)),
+            ])),
+        );
     }
 
     Err(ContractError::Std(StdError::NotFound {
@@ -164,7 +165,7 @@ pub fn receive_cw20(
     deps: DepsMut,
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
-) -> Result<HandleResponse, ContractError> {
+) -> Result<Response, ContractError> {
     let mixer: Mixer = MIXER.load(deps.storage)?;
 
     // Validations
@@ -183,7 +184,7 @@ pub fn receive_cw20(
         return Err(ContractError::InsufficientFunds {});
     }
 
-    match from_binary(&cw20_msg.msg.unwrap_or_default()) {
+    match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::DepositCw20 { commitment }) => {
             // Handle the "deposit"
             if let Some(commitment) = commitment {
@@ -204,15 +205,13 @@ pub fn receive_cw20(
                     },
                 )?;
 
-                return Ok(HandleResponse {
-                    data: None,
-                    messages: vec![],
-                    attributes: vec![
+                return Ok(
+                    Response::new().add_event(Event::new("mixer-deposit").add_attributes(vec![
                         attr("action", "deposit_cw20"),
                         attr("inserted_index", inserted_index.to_string()),
-                        attr("commitment", commitment.to_base64()),
-                    ],
-                });
+                        attr("commitment", format!("{:?}", commitment)),
+                    ])),
+                );
             }
             Err(ContractError::Std(StdError::NotFound {
                 kind: "Commitment".to_string(),
@@ -226,10 +225,9 @@ pub fn receive_cw20(
 
 pub fn withdraw(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     msg: WithdrawMsg,
-) -> Result<HandleResponse, ContractError> {
+) -> Result<Response, ContractError> {
     let recipient = msg.recipient;
     let relayer = msg.relayer;
     let fee = msg.fee;
@@ -241,7 +239,7 @@ pub fn withdraw(
     let mixer = MIXER.load(deps.storage)?;
 
     // Validations
-    let sent_funds = info.sent_funds;
+    let sent_funds = info.funds;
     if !refund.is_zero() && (sent_funds.len() != 1 || sent_funds[0].amount != refund) {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Sent insufficent refund".to_string(),
@@ -296,7 +294,7 @@ pub fn withdraw(
     let mut msgs: Vec<CosmosMsg> = vec![];
 
     // Send the funds to "recipient"
-    let amt_to_recipient = match checked_sub(mixer.deposit_size, fee) {
+    let amt_to_recipient = match mixer.deposit_size.checked_sub(fee) {
         Ok(v) => v,
         Err(e) => {
             return Err(ContractError::Std(StdError::GenericErr {
@@ -317,8 +315,8 @@ pub fn withdraw(
         if !amt_to_recipient.is_zero() {
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: cw20_address.clone(),
-                send: [].to_vec(),
-                msg: to_binary(&Cw20HandleMsg::Transfer {
+                funds: vec![],
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: recipient.clone(),
                     amount: amt_to_recipient,
                 })?,
@@ -328,8 +326,8 @@ pub fn withdraw(
         if !fee.is_zero() {
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: cw20_address,
-                send: [].to_vec(),
-                msg: to_binary(&Cw20HandleMsg::Transfer {
+                funds: vec![],
+                msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: relayer,
                     amount: fee,
                 })?,
@@ -339,7 +337,6 @@ pub fn withdraw(
         let native_token_denom = mixer.native_token_denom.unwrap();
         if !amt_to_recipient.is_zero() {
             msgs.push(CosmosMsg::Bank(BankMsg::Send {
-                from_address: env.contract.address.clone(),
                 to_address: recipient.clone(),
                 amount: vec![Coin {
                     denom: native_token_denom.clone(),
@@ -349,7 +346,6 @@ pub fn withdraw(
         }
         if !fee.is_zero() {
             msgs.push(CosmosMsg::Bank(BankMsg::Send {
-                from_address: env.contract.address.clone(),
                 to_address: relayer,
                 amount: vec![Coin {
                     denom: native_token_denom,
@@ -361,22 +357,19 @@ pub fn withdraw(
 
     if !refund.is_zero() {
         msgs.push(CosmosMsg::Bank(BankMsg::Send {
-            from_address: env.contract.address.clone(),
             to_address: recipient.clone(),
             amount: sent_funds,
         }));
     }
 
-    Ok(HandleResponse {
-        messages: msgs,
-        data: None,
-        attributes: vec![
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_event(Event::new("mixer-withdraw").add_attributes(vec![
             attr("action", "withdraw"),
             attr("recipient", recipient),
-            attr("root", msg.root.to_base64()),
-            attr("nullifier_hash", msg.nullifier_hash.to_base64()),
-        ],
-    })
+            attr("root", format!("{:?}", msg.root)),
+            attr("nullifier_hash", format!("{:?}", msg.nullifier_hash)),
+        ])))
 }
 
 fn is_known_nullifier(store: &dyn Storage, nullifier: &[u8; 32]) -> bool {
@@ -393,6 +386,7 @@ fn verify(
         .map_err(|_| ContractError::VerifyError)
 }
 
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&get_config(deps)?),
@@ -434,11 +428,7 @@ fn get_merkle_root(deps: Deps, id: u32) -> StdResult<MerkleRootResponse> {
     Ok(MerkleRootResponse { root: root_binary })
 }
 
-pub fn migrate(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: MigrateMsg,
-) -> StdResult<MigrateResponse> {
-    Ok(MigrateResponse::default())
+#[entry_point]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    Ok(Response::default())
 }

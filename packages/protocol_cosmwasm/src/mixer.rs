@@ -1,10 +1,10 @@
-use cosmwasm_std::{Binary, HumanAddr, Uint128};
+use cosmwasm_std::{Binary, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-pub struct InitMsg {
+pub struct InstantiateMsg {
     pub deposit_size: Uint128,
     pub merkletree_levels: u32,
     pub native_token_denom: Option<String>,
@@ -13,7 +13,7 @@ pub struct InitMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum HandleMsg {
+pub enum ExecuteMsg {
     Deposit(DepositMsg),
     Withdraw(WithdrawMsg),
     Receive(Cw20ReceiveMsg),
@@ -40,11 +40,11 @@ pub struct WithdrawMsg {
     pub proof_bytes: Binary,
     pub root: Binary,
     pub nullifier_hash: Binary,
-    pub recipient: HumanAddr,
-    pub relayer: HumanAddr,
+    pub recipient: String,
+    pub relayer: String,
     pub fee: Uint128,
     pub refund: Uint128,
-    pub cw20_address: Option<HumanAddr>,
+    pub cw20_address: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
