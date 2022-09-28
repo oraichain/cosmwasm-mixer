@@ -21,15 +21,16 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = {path="../../../cosmwasm/packages/std"}
-cosmwasm-storage = {path="../../../cosmwasm/packages/storage", default-features = false, features = ["iterator"] }
+cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
+cosmwasm-storage = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
+
 schemars = "0.8.1"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 protocol-cosmwasm = { version = "0.1.0", path = "../../packages/protocol_cosmwasm"}
 
 [dev-dependencies]
-cosmwasm-schema = "1.1.0"
+cosmwasm-schema = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }

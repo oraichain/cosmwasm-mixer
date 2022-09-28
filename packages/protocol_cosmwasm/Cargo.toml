@@ -11,7 +11,7 @@ description = "Common helpers for protocol-cosmwasm"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = {path="../../../cosmwasm/packages/std"}
+cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.26" }

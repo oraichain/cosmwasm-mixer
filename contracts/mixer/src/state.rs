@@ -3,6 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Api, StdResult, Storage, Uint128};
+
 use cosmwasm_storage::{prefixed, prefixed_read, singleton, singleton_read};
 
 use protocol_cosmwasm::error::ContractError;
