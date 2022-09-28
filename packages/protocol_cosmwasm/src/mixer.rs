@@ -1,5 +1,4 @@
 use cosmwasm_std::{Binary, Uint128};
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -7,8 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub deposit_size: Uint128,
     pub merkletree_levels: u32,
-    pub native_token_denom: Option<String>,
-    pub cw20_address: Option<String>,
+    pub native_token_denom: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -16,7 +14,6 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Deposit(DepositMsg),
     Withdraw(WithdrawMsg),
-    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -29,13 +26,6 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum Cw20HookMsg {
-    /// Depcosit Cw20 tokens
-    DepositCw20 { commitment: Option<Binary> },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct WithdrawMsg {
     pub proof_bytes: Binary,
     pub root: Binary,
@@ -44,7 +34,6 @@ pub struct WithdrawMsg {
     pub relayer: String,
     pub fee: Uint128,
     pub refund: Uint128,
-    pub cw20_address: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -58,7 +47,6 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ConfigResponse {
     pub native_token_denom: String,
-    pub cw20_address: String,
     pub deposit_size: String,
 }
 
