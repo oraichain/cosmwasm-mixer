@@ -27,16 +27,15 @@ cosmwasm-storage = { git = "https://github.com/oraichain/cosmwasm", branch = "mu
 schemars = "0.8.1"
 serde = { version = "1.0.127", default-features = false, features = ["derive"] }
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
-protocol-cosmwasm = { version = "0.1.0", path = "../../packages/protocol_cosmwasm"}
+thiserror = "1.0"
 
 [dev-dependencies]
 cosmwasm-schema = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
+cosmwasm-vm = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }
 hex = "0.4"
-
-[target.'cfg(not(target_arch="wasm32"))'.dependencies]
-wasm-utils = { version = "=0.1.3" }
+tempfile = "3.1.0"

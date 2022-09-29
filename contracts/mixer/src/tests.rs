@@ -14,12 +14,12 @@ use cosmwasm_std::Binary;
 use cosmwasm_std::{attr, Coin, OwnedDeps, Uint128};
 
 use crate::contract::{execute, instantiate};
+use crate::msg::{DepositMsg, ExecuteMsg, InstantiateMsg, WithdrawMsg};
 use crate::state::read_root;
 use crate::test_util::Element;
-use protocol_cosmwasm::mixer::{DepositMsg, ExecuteMsg, InstantiateMsg, WithdrawMsg};
-use protocol_cosmwasm::utils::truncate_and_pad;
+use crate::test_util::MERKLE_TREE_LEVELS;
+use crate::utils::truncate_and_pad;
 
-const MERKLE_TREE_LEVELS: u32 = 30;
 const DEPOSIT_SIZE: &str = "1000000";
 const NATIVE_TOKEN_DENOM: &str = "orai";
 
@@ -34,7 +34,7 @@ fn create_mixer() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let env = mock_env();
     let info = mock_info("anyone", &[]);
     let instantiate_msg = InstantiateMsg {
-        merkletree_levels: MERKLE_TREE_LEVELS,
+        merkletree_levels: MERKLE_TREE_LEVELS as u32,
         deposit_size: Uint128::try_from(DEPOSIT_SIZE).unwrap(),
         native_token_denom: NATIVE_TOKEN_DENOM.to_string(),
     };
@@ -51,7 +51,6 @@ fn prepare_zk_circuit(
     fee: u128,
     refund: u128,
 ) -> (Vec<u8>, Element, Element, Element) {
-    let (pk_bytes, _) = crate::test_util::setup_environment(curve);
     let recipient_bytes = RECIPIENT.as_bytes();
     let relayer_bytes = relayer.as_bytes();
     let fee_value = fee;
@@ -63,7 +62,6 @@ fn prepare_zk_circuit(
         curve,
         truncate_and_pad(recipient_bytes),
         truncate_and_pad(relayer_bytes),
-        pk_bytes.clone(),
         fee_value,
         refund_value,
     )
@@ -76,7 +74,7 @@ fn test_mixer_proper_initialization() {
     let env = mock_env();
     let info = mock_info("anyone", &[]);
     let instantiate_msg = InstantiateMsg {
-        merkletree_levels: MERKLE_TREE_LEVELS,
+        merkletree_levels: MERKLE_TREE_LEVELS as u32,
         deposit_size: Uint128::try_from(DEPOSIT_SIZE).unwrap(),
         native_token_denom: NATIVE_TOKEN_DENOM.to_string(),
     };
@@ -106,7 +104,7 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     // Try the deposit with insufficient fund
     let info = mock_info("depositor", &[Coin::new(1_000_u128, NATIVE_TOKEN_DENOM)]);
     let deposit_msg = DepositMsg {
-        commitment: Some(element_bin.clone()),
+        commitment: element_bin.clone(),
     };
 
     let err = execute(
@@ -118,29 +116,13 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     .unwrap_err();
     assert_eq!(err.to_string(), "Insufficient_funds".to_string());
 
-    // Try the deposit with empty commitment
-    let info = mock_info(
-        "depositor",
-        &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
-    );
-    let deposit_msg = DepositMsg { commitment: None };
-
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::Deposit(deposit_msg),
-    )
-    .unwrap_err();
-    assert_eq!(err.to_string(), "Commitment not found".to_string());
-
     // Try the deposit for success
     let info = mock_info(
         "depositor",
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(element_bin),
+        commitment: element_bin,
     };
 
     let response = execute(
@@ -167,7 +149,7 @@ fn test_mixer_should_withdraw_native_token() {
     // Try the deposit for success
     let info = mock_info("anyone", &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)]);
     let deposit_msg = DepositMsg {
-        commitment: Some(Binary::from(leaf_element.0.to_vec())),
+        commitment: Binary::from(leaf_element.0.to_vec()),
     };
 
     let response = execute(
@@ -215,7 +197,7 @@ fn test_mixer_should_fail_when_invalid_merkle_roots() {
         &[Coin::new(1_000_000_u128, NATIVE_TOKEN_DENOM)],
     );
     let deposit_msg = DepositMsg {
-        commitment: Some(Binary::from(leaf_element.0.to_vec())),
+        commitment: Binary::from(leaf_element.0.to_vec()),
     };
 
     let response = execute(

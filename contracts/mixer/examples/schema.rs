@@ -3,11 +3,11 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use cosmwasm_mixer::state::{MerkleTree, Mixer};
-use protocol_cosmwasm::mixer::{
+use cosmwasm_mixer::msg::{
     ConfigResponse, DepositMsg, ExecuteMsg, InstantiateMsg, MerkleRootResponse,
     MerkleTreeInfoResponse, QueryMsg, WithdrawMsg,
 };
+use cosmwasm_mixer::state::{MerkleTree, Mixer};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

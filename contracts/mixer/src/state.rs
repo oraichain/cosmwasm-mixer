@@ -1,4 +1,3 @@
-use protocol_cosmwasm::utils::element_encoder;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -6,9 +5,12 @@ use cosmwasm_std::{Api, StdResult, Storage, Uint128};
 
 use cosmwasm_storage::{prefixed, prefixed_read, singleton, singleton_read};
 
-use protocol_cosmwasm::error::ContractError;
-use protocol_cosmwasm::structs::ROOT_HISTORY_SIZE;
-use protocol_cosmwasm::zeroes::{self, DEFAULT_LEAF};
+use crate::error::ContractError;
+use crate::utils::element_encoder;
+use crate::zeroes::{self, DEFAULT_LEAF};
+
+// History length of merkle tree root
+pub const ROOT_HISTORY_SIZE: u32 = 100;
 
 /// Mixer
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -35,7 +37,7 @@ impl MerkleTree {
     ) -> Result<[u8; 32], ContractError> {
         match api.poseidon_hash(&[left, right]) {
             Ok(hash) => Ok(element_encoder(&hash)),
-            Err(_) => Err(ContractError::HashError {}),
+            Err(err) => Err(ContractError::Std(err)),
         }
     }
 
@@ -108,7 +110,7 @@ pub fn read_subtree(store: &dyn Storage, k: u32) -> Result<[u8; 32], ContractErr
     prefixed_read(store, FILLED_SUBTREES_KEY)
         .get(&k.to_le_bytes())
         .map(|item| element_encoder(&item))
-        .ok_or(ContractError::HashError {})
+        .ok_or(ContractError::ItemNotFound {})
 }
 
 pub fn save_root(store: &mut dyn Storage, k: u32, data: &[u8; 32]) {

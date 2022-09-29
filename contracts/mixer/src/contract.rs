@@ -3,14 +3,14 @@ use cosmwasm_std::{
     MessageInfo, Response, StdError, StdResult,
 };
 
-use protocol_cosmwasm::error::ContractError;
-use protocol_cosmwasm::mixer::{
+use crate::error::ContractError;
+use crate::msg::{
     ConfigResponse, DepositMsg, ExecuteMsg, InstantiateMsg, MerkleRootResponse,
     MerkleTreeInfoResponse, MigrateMsg, QueryMsg, WithdrawMsg,
 };
 
-use protocol_cosmwasm::utils::{element_encoder, truncate_and_pad};
-use protocol_cosmwasm::zeroes::zeroes;
+use crate::utils::{element_encoder, truncate_and_pad};
+use crate::zeroes::zeroes;
 
 use codec::Encode;
 
@@ -93,26 +93,20 @@ pub fn deposit(
     }
 
     // Handle the "deposit"
-    if let Some(commitment) = msg.commitment {
-        let commitment_bytes = element_encoder(commitment.as_slice());
+    let commitment_bytes = element_encoder(msg.commitment.as_slice());
 
-        // insert commitment into merke_tree
-        let inserted_index = mixer
-            .merkle_tree
-            .insert(deps.api, commitment_bytes, deps.storage)?;
-        mixer_write(deps.storage, &mixer)?;
-        return Ok(
-            Response::new().add_event(Event::new("mixer-deposit").add_attributes(vec![
-                attr("action", "deposit"),
-                attr("inserted_index", inserted_index.to_string()),
-                attr("commitment", format!("{:?}", commitment)),
-            ])),
-        );
-    }
-
-    Err(ContractError::Std(StdError::NotFound {
-        kind: "Commitment".to_string(),
-    }))
+    // insert commitment into merke_tree
+    let inserted_index = mixer
+        .merkle_tree
+        .insert(deps.api, commitment_bytes, deps.storage)?;
+    mixer_write(deps.storage, &mixer)?;
+    return Ok(
+        Response::new().add_event(Event::new("mixer-deposit").add_attributes(vec![
+            attr("action", "deposit"),
+            attr("inserted_index", inserted_index.to_string()),
+            attr("commitment", msg.commitment.to_base64()),
+        ])),
+    );
 }
 
 pub fn withdraw(
@@ -155,11 +149,13 @@ pub fn withdraw(
     let recipient_bytes = truncate_and_pad(recipient.as_bytes());
     let relayer_bytes = truncate_and_pad(relayer.as_bytes());
 
+    // limit arbitrary data bytes to 96 bytes
     let mut arbitrary_data_bytes = Vec::new();
     arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
     arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
     arbitrary_data_bytes.extend_from_slice(&fee.u128().encode());
     arbitrary_data_bytes.extend_from_slice(&refund.u128().encode());
+
     let arbitrary_input = deps
         .api
         .curve_hash(&arbitrary_data_bytes)
@@ -233,8 +229,8 @@ pub fn withdraw(
         .add_event(Event::new("mixer-withdraw").add_attributes(vec![
             attr("action", "withdraw"),
             attr("recipient", recipient),
-            attr("root", format!("{:?}", msg.root)),
-            attr("nullifier_hash", format!("{:?}", msg.nullifier_hash)),
+            attr("root", msg.root.to_base64()),
+            attr("nullifier_hash", msg.nullifier_hash.to_base64()),
         ])))
 }
 
