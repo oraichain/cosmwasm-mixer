@@ -100,7 +100,7 @@ impl MerkleTree {
 }
 
 pub fn save_subtree(store: &mut dyn Storage, k: u32, data: &[u8; 32]) {
-    prefixed(store, MERKLE_ROOTS_KEY).set(&k.to_le_bytes(), data)
+    prefixed(store, FILLED_SUBTREES_KEY).set(&k.to_le_bytes(), data)
 }
 
 pub fn read_subtree(store: &dyn Storage, k: u32) -> Result<[u8; 32], ContractError> {
