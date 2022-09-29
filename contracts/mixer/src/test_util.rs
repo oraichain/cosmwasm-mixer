@@ -9,7 +9,7 @@ use crate::zeroes::DEFAULT_LEAF;
 
 pub const MERKLE_TREE_LEVELS: usize = 30;
 
-type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, MERKLE_TREE_LEVELS>;
+pub type MixerR1CSProverBn254_30 = MixerR1CSProver<Bn254, MERKLE_TREE_LEVELS>;
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Element(pub [u8; 32]);
