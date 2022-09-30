@@ -2,14 +2,12 @@ use ark_bn254::Fr;
 use ark_ff::BigInteger;
 use ark_ff::PrimeField;
 use ark_std::One;
-use arkworks_native_gadgets::poseidon::FieldHasher;
-use arkworks_native_gadgets::poseidon::Poseidon;
-use arkworks_setups::common::setup_params;
 use arkworks_setups::Curve;
 
 use cosmwasm_std::testing::{
     mock_dependencies, mock_env, mock_info, MockApi, MockQuerier, MockStorage,
 };
+use cosmwasm_std::Api;
 use cosmwasm_std::Binary;
 use cosmwasm_std::{attr, Coin, OwnedDeps, Uint128};
 
@@ -93,11 +91,15 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     let mut deps = create_mixer();
 
     // Initialize the mixer
-    let params = setup_params(Curve::Bn254, 5, 3);
-    let poseidon = Poseidon::new(params);
-    let res = poseidon.hash_two(&Fr::one(), &Fr::one()).unwrap();
+    let res = deps
+        .api
+        .poseidon_hash(&[
+            &Fr::one().into_repr().to_bytes_le(),
+            &Fr::one().into_repr().to_bytes_le(),
+        ])
+        .unwrap();
     let mut element: [u8; 32] = [0u8; 32];
-    element.copy_from_slice(&res.into_repr().to_bytes_le());
+    element.copy_from_slice(&res);
 
     let element_bin = Binary::from(element.as_slice());
 
