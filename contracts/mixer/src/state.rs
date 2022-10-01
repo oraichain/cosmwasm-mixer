@@ -1,8 +1,5 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Api, StdResult, Storage, Uint128};
-
 use cosmwasm_storage::{prefixed, prefixed_read, singleton, singleton_read};
 
 use crate::error::ContractError;
@@ -13,7 +10,7 @@ use crate::zeroes::{self, DEFAULT_LEAF};
 pub const ROOT_HISTORY_SIZE: u32 = 100;
 
 /// Mixer
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Mixer {
     pub deposit_size: Uint128,
     pub native_token_denom: String,
@@ -21,7 +18,7 @@ pub struct Mixer {
 }
 
 /// MerkleTree
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct MerkleTree {
     pub levels: u32,
     pub current_root_index: u32,

@@ -57,6 +57,7 @@ build_schema="${2:-false}"
 if [ "$build_schema" == 'true' ]; then
     echo "Creating schema in $contractdir"
     (
+        cd artifacts
         cargo run -q --example schema --target-dir "$basedir/target"
     )
 fi

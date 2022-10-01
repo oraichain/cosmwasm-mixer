@@ -6,13 +6,11 @@ use cosmwasm_std::{
 use crate::error::ContractError;
 use crate::msg::{
     ConfigResponse, DepositMsg, ExecuteMsg, InstantiateMsg, MerkleRootResponse,
-    MerkleTreeInfoResponse, MigrateMsg, QueryMsg, WithdrawMsg,
+    MerkleTreeInfoResponse, QueryMsg, WithdrawMsg,
 };
 
 use crate::utils::{element_encoder, truncate_and_pad};
 use crate::zeroes::zeroes;
-
-use codec::Encode;
 
 use crate::state::{
     mixer_read, mixer_write, nullifier_read, nullifier_write, read_root, save_root, save_subtree,
@@ -153,8 +151,8 @@ pub fn withdraw(
     let mut arbitrary_data_bytes = Vec::new();
     arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
     arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
-    arbitrary_data_bytes.extend_from_slice(&fee.u128().encode());
-    arbitrary_data_bytes.extend_from_slice(&refund.u128().encode());
+    arbitrary_data_bytes.extend_from_slice(&fee.to_le_bytes());
+    arbitrary_data_bytes.extend_from_slice(&refund.to_le_bytes());
 
     let arbitrary_input = deps
         .api
@@ -267,9 +265,4 @@ fn get_merkle_root(deps: Deps, id: u32) -> StdResult<MerkleRootResponse> {
     let root = read_root(deps.storage, id);
     let root_binary = Binary::from(root.as_slice());
     Ok(MerkleRootResponse { root: root_binary })
-}
-
-#[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
-    Ok(Response::default())
 }
