@@ -98,8 +98,8 @@ fn test_zk() {
 
     let mut leaves = vec![];
     for note in NOTES {
-        let note_secret = note.as_bytes();
-        let commitment_hash = Binary::from(gen_commitment(note_secret));
+        let note_secret = hex::decode(note).unwrap();
+        let commitment_hash = Binary::from(gen_commitment(&note_secret));
         leaves.push(commitment_hash.to_vec());
         let env = to_vec(&mock_env()).unwrap();
         let info = to_vec(&mock_info("creator", &coins(100000, "orai"))).unwrap();
@@ -114,8 +114,8 @@ fn test_zk() {
 
     // withdraw the first deposit
     let index = 0u64;
-    let note_secret = NOTES[index as usize].as_bytes();
-    let proof = gen_zk(note_secret, index, leaves);
+    let note_secret = hex::decode(NOTES[index as usize]).unwrap();
+    let proof = gen_zk(&note_secret, index, leaves);
     let env = to_vec(&mock_env()).unwrap();
     let info = to_vec(&mock_info("anyone", &[])).unwrap();
     let msg = format!(
