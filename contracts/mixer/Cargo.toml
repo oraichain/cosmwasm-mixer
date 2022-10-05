@@ -21,14 +21,14 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
-cosmwasm-storage = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
-cosmwasm-schema = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
+cosmwasm-std = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-zk", default-features = false }
+cosmwasm-storage = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-zk", default-features = false }
+cosmwasm-schema = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-zk", default-features = false }
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 thiserror = "1.0"
 
 [dev-dependencies]
-cosmwasm-vm = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-1.1.2-zk", default-features = false }
+cosmwasm-vm = { git = "https://github.com/oraichain/cosmwasm", branch = "multiwasm-zk", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
