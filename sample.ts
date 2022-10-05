@@ -1,14 +1,17 @@
 import 'dotenv/config';
 import * as cosmwasmMixer from './wasm/mixer_js/pkg';
-import Cosmos from '@oraichain/cosmosjs';
-const message = Cosmos.message;
+import axios from 'axios';
+import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
+import * as cosmwasm from '@cosmjs/cosmwasm-stargate';
+import { Decimal } from '@cosmjs/math';
+import { GasPrice } from '@cosmjs/stargate';
 
-const cosmos = new Cosmos(process.env.URL, process.env.CHAIN_ID);
-const childKey = cosmos.getChildKey(process.env.MNEMONIC);
-const sender = cosmos.getAddress(childKey);
+let prefix = process.env.PREFIX;
+let denom = process.env.DENOM;
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
-const contract_address = 'orai122qgjdfjm73guxjq0y67ng8jgex4w09ttguavj';
+const contract_address =
+  'orai1qxd52frq6jnd73nsw49jzp4xccal3g9v47pxwftzqy78ww02p75s62e94t';
 // for (let i = 0; i < 10; i++) {
 //   console.log(
 //     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
@@ -34,30 +37,28 @@ function compare(a, b) {
   return true;
 }
 
+let leaves = undefined;
 const getLeaves = async (address: string): Promise<Uint8Array[]> => {
-  const { txs } = await cosmos.get(
-    `cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
-  );
-  const leaves = txs.map((tx) =>
-    Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')
-  );
+  if (!leaves) {
+    const res = await axios.get(
+      `${process.env.URL}/cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
+    );
+    leaves = res.data.txs.map((tx: any) =>
+      Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')
+    );
+  }
   return leaves;
 };
 
 const query = async (
+  client: cosmwasm.SigningCosmWasmClient,
   address: string,
   input: Record<string, any>
 ): Promise<any> => {
-  const url = `/wasm/v1beta1/contract/${address}/smart/${Buffer.from(
-    JSON.stringify(input)
-  ).toString('base64')}`;
-  // console.log(url);
   try {
-    const { code, message, data } = await cosmos.get(url);
-    if (code) {
-      throw new Error(message);
-    }
-    return data;
+    const res = await client.queryContractSmart(address, input);
+
+    return res;
   } catch (ex) {
     console.log(ex);
   }
@@ -67,58 +68,8 @@ const getNote = (index = 0): Buffer => {
   return Buffer.from(noteSecrets[index].padEnd(88, '='), 'base64');
 };
 
-const getHandleMessage = (contract, msg, sender, amount, funds) => {
-  const sent_funds = funds
-    ? funds
-    : amount
-    ? [{ denom: cosmos.bech32MainPrefix, amount }]
-    : null;
-  const msgSend = new message.cosmwasm.wasm.v1beta1.MsgExecuteContract({
-    contract,
-    msg,
-    sender,
-    sent_funds
-  });
-
-  const msgSendAny = new message.google.protobuf.Any({
-    type_url: '/cosmwasm.wasm.v1beta1.MsgExecuteContract',
-    value:
-      message.cosmwasm.wasm.v1beta1.MsgExecuteContract.encode(msgSend).finish()
-  });
-
-  return new message.cosmos.tx.v1beta1.TxBody({
-    messages: [msgSendAny]
-  });
-};
-
-const handle = async (
-  address: string,
-  input: Record<string, any>,
-  { amount, fees, gas, sent_funds }: any = {}
-): Promise<any> => {
-  const txBody = getHandleMessage(
-    address,
-    Buffer.from(JSON.stringify(input)),
-    sender,
-    amount,
-    sent_funds
-  );
-
-  try {
-    const res = await cosmos.submit(
-      childKey,
-      txBody,
-      'BROADCAST_MODE_BLOCK',
-      fees,
-      gas
-    );
-    return res;
-  } catch (error) {
-    console.log('error: ', error);
-  }
-};
-
 const getProof = async (
+  sender: string,
   noteSecret: Uint8Array,
   recipient: string
 ): Promise<Uint8Array[]> => {
@@ -128,34 +79,50 @@ const getProof = async (
   return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender);
 };
 
-const runDeposit = async (index = 0) => {
+const runDeposit = async (
+  client: cosmwasm.SigningCosmWasmClient,
+  sender: string,
+  index = 0
+) => {
   const noteSecret = getNote(index);
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
 
-  const { deposit_size } = await query(contract_address, { config: {} });
+  const { deposit_size } = await query(client, contract_address, {
+    config: {}
+  });
 
-  const result = await handle(
+  const result = await client.execute(
+    sender,
     contract_address,
     {
       deposit: {
         commitment: Buffer.from(commitment_hash).toString('base64')
       }
     },
-    { amount: deposit_size, gas: 2000000 }
+    'auto',
+    undefined,
+    [{ amount: deposit_size, denom }]
   );
 
-  console.log(result);
+  console.log(JSON.stringify(result));
 };
 
-const runWithdraw = async (recipient: string, index = 0) => {
+const runWithdraw = async (
+  client: cosmwasm.SigningCosmWasmClient,
+  sender: string,
+  recipient: string,
+  index = 0
+) => {
   const noteSecret = getNote(index);
-  const [proof, root_hash, nullifier_hash, commitment_hash] = await getProof(
+  const [proof, root_hash, nullifier_hash] = await getProof(
+    sender,
     noteSecret,
     recipient
   );
 
   // withdraw to this recipient
-  const result = await handle(
+  const result = await client.execute(
+    sender,
     contract_address,
     {
       withdraw: {
@@ -168,17 +135,39 @@ const runWithdraw = async (recipient: string, index = 0) => {
         refund: '0'
       }
     },
-    { gas: 20000000 }
+    'auto'
   );
 
-  console.log(result);
+  console.log(JSON.stringify(result));
 };
 
 (async () => {
-  for (let i = 0; i < 10; i++) {
-    await runDeposit(i);
-  }
-  for (let i = 0; i < 10; i++) {
-    await runWithdraw(recipient, i);
-  }
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+    process.env.MNEMONIC,
+    {
+      prefix
+    }
+  );
+  const [firstAccount] = await wallet.getAccounts();
+  const client = await cosmwasm.SigningCosmWasmClient.connectWithSigner(
+    process.env.RPC_URL,
+    wallet,
+    {
+      gasPrice: new GasPrice(Decimal.fromUserInput('0', 6), denom),
+      prefix
+    }
+  );
+
+  // should get leaves from relayer or contract logs
+  leaves = noteSecrets
+    .map((secret) => Buffer.from(secret.padEnd(88, '='), 'base64'))
+    .map((noteSecret) => cosmwasmMixer.gen_commitment(noteSecret));
+  await runWithdraw(client, firstAccount.address, recipient, 0);
+
+  // for (let i = 0; i < 10; i++) {
+  //   await runDeposit(client, firstAccount.address, i);
+  // }
+  // for (let i = 0; i < 10; i++) {
+  //   await runWithdraw(client, firstAccount.address, recipient, i);
+  // }
 })();
