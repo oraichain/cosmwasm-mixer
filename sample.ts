@@ -41,7 +41,7 @@ let leaves = undefined;
 const getLeaves = async (address: string): Promise<Uint8Array[]> => {
   if (!leaves) {
     const res = await axios.get(
-      `${process.env.URL}/cosmos/tx/v1beta1/txs?events=wasm.contract_address%3d%27${address}%27&events=wasm.action%3d%27deposit_native%27`
+      `${process.env.URL}/cosmos/tx/v1beta1/txs?events=wasm-mixer-deposit._contract_address%3d%27${address}%27`
     );
     leaves = res.data.txs.map((tx: any) =>
       Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')
@@ -159,14 +159,16 @@ const runWithdraw = async (
   );
 
   // should get leaves from relayer or contract logs
-  leaves = noteSecrets
-    .map((secret) => Buffer.from(secret.padEnd(88, '='), 'base64'))
-    .map((noteSecret) => cosmwasmMixer.gen_commitment(noteSecret));
+  // leaves = noteSecrets
+  //   .map((secret) => Buffer.from(secret.padEnd(88, '='), 'base64'))
+  //   .map((noteSecret) => cosmwasmMixer.gen_commitment(noteSecret));
+
+  for (let i = 0; i < 10; i++) {
+    await runDeposit(client, firstAccount.address, i);
+  }
+
   await runWithdraw(client, firstAccount.address, recipient, 0);
 
-  // for (let i = 0; i < 10; i++) {
-  //   await runDeposit(client, firstAccount.address, i);
-  // }
   // for (let i = 0; i < 10; i++) {
   //   await runWithdraw(client, firstAccount.address, recipient, i);
   // }
