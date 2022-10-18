@@ -1,13 +1,9 @@
 use crate::test_util::{gen_zk_proof, MixerR1CSProverBn254_30};
 
-use std::collections::HashSet;
-use tempfile::TempDir;
-
 use cosmwasm_std::{coins, from_slice, to_vec, Binary, ContractResult, QueryResponse};
 use cosmwasm_vm::testing::{mock_backend, mock_env, mock_info, MockApi};
 use cosmwasm_vm::{
-    call_execute_raw, call_instantiate_raw, call_query_raw, Cache, CacheOptions, InstanceOptions,
-    Size,
+    call_execute_raw, call_instantiate_raw, call_query_raw, Instance, InstanceOptions, Size,
 };
 
 use crate::utils::truncate_and_pad;
@@ -22,8 +18,7 @@ const DEFAULT_INSTANCE_OPTIONS: InstanceOptions = InstanceOptions {
     gas_limit: DEFAULT_GAS_LIMIT,
     print_debug: false,
 };
-// Cache
-const MEMORY_CACHE_SIZE: Size = Size::mebi(200);
+
 static CONTRACT: &[u8] = include_bytes!("../artifacts/mixer.wasm");
 
 const RECIPIENT: &str = "orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5";
@@ -70,21 +65,15 @@ fn gen_zk(note_secret: &[u8], index: u64, leaves: Vec<Vec<u8>>) -> MixerProof {
 
 #[test]
 fn test_zk() {
-    let options = CacheOptions {
-        base_dir: TempDir::new().unwrap().into_path(),
-        available_capabilities: HashSet::default(),
-        memory_cache_size: MEMORY_CACHE_SIZE,
-        instance_memory_limit: DEFAULT_MEMORY_LIMIT,
-    };
-
-    let cache = unsafe { Cache::new(options).unwrap() };
-
-    let checksum = cache.save_wasm(&CONTRACT).unwrap();
     let mut backend = mock_backend(&[]);
     backend.api = MockApi::new(24); // same as old version
-    let mut instance = cache
-        .get_instance(&checksum, backend, DEFAULT_INSTANCE_OPTIONS)
-        .unwrap();
+    let mut instance = Instance::from_code(
+        CONTRACT,
+        backend,
+        DEFAULT_INSTANCE_OPTIONS,
+        Some(DEFAULT_MEMORY_LIMIT),
+    )
+    .unwrap();
 
     let msg =
         br#"{"deposit_size": "100000", "merkletree_levels": 30, "native_token_denom": "orai"}"#;
