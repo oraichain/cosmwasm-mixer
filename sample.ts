@@ -10,8 +10,7 @@ let prefix = process.env.PREFIX;
 let denom = process.env.DENOM;
 
 const recipient = 'orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5';
-const contract_address =
-  'orai1qxd52frq6jnd73nsw49jzp4xccal3g9v47pxwftzqy78ww02p75s62e94t';
+const contract_address = process.env.MIXER_ADDRESS;
 // for (let i = 0; i < 10; i++) {
 //   console.log(
 //     Buffer.from(cosmwasmMixer.gen_note()).toString('base64').replace(/=+$/g, '')
