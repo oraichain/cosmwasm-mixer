@@ -6,7 +6,11 @@
     "build": "bash build_release.sh contracts/mixer"
   },
   "dependencies": {
-    "@oraichain/cosmosjs": "^0.1.7",
+    "@cosmjs/cosmwasm-stargate": "^0.29.0",
+    "@cosmjs/crypto": "^0.29.0",
+    "@cosmjs/math": "^0.29.0",
+    "@cosmjs/proto-signing": "^0.29.0",
+    "@cosmjs/stargate": "^0.29.0",
     "dotenv": "^16.0.1"
   },
   "devDependencies": {

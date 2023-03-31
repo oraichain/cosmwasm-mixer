@@ -4,3 +4,6 @@ wasm-debug = "build --target wasm32-unknown-unknown"
 unit-test = "test --lib --features backtraces"
 integration-test = "test --test integration"
 schema = "run --example schema"
+
+[target.wasm32-unknown-unknown]
+runner = 'wasm-bindgen-test-runner'

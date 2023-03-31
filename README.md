@@ -33,8 +33,10 @@ yarn build-wasm --target nodejs
 
 Run the following command to run the unit tests.
 
-```
+```bash
 yarn test test_mixer_should_be_able_to_deposit_native_token --release
+#testing mixer_js
+cargo test --release --package cosmwasm-mixer-js --lib --target wasm32-unknown-unknown -- tests::test_zk
 ```
 
 ## License

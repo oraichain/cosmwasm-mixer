@@ -1,9 +1,9 @@
 [workspace]
-members = ["contracts/*", "packages/*","wasm/*"]
+members = ["contracts/*", "wasm/*"]
 resolver = "2"
 
 [profile.release]
-opt-level = 'z'
+opt-level = 3
 debug = false
 rpath = false
 lto = true
