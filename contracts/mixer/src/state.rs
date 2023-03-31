@@ -32,7 +32,7 @@ impl MerkleTree {
         left: &[u8; 32],
         right: &[u8; 32],
     ) -> Result<[u8; 32], ContractError> {
-        match api.poseidon_hash(&[left, right]) {
+        match api.poseidon_hash(left, right, 1) {
             Ok(hash) => Ok(element_encoder(&hash)),
             Err(err) => Err(ContractError::Std(err)),
         }

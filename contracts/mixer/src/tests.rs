@@ -93,10 +93,11 @@ fn test_mixer_should_be_able_to_deposit_native_token() {
     // Initialize the mixer
     let res = deps
         .api
-        .poseidon_hash(&[
+        .poseidon_hash(
             &Fr::one().into_repr().to_bytes_le(),
             &Fr::one().into_repr().to_bytes_le(),
-        ])
+            1,
+        )
         .unwrap();
     let mut element: [u8; 32] = [0u8; 32];
     element.copy_from_slice(&res);

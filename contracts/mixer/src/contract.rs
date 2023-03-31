@@ -156,7 +156,7 @@ pub fn withdraw(
 
     let arbitrary_input = deps
         .api
-        .curve_hash(&arbitrary_data_bytes)
+        .curve_hash(&arbitrary_data_bytes, 1)
         .map_err(|_| ContractError::HashError)?;
 
     // Join the public input bytes
@@ -168,7 +168,7 @@ pub fn withdraw(
     // Verify the proof
     let result = deps
         .api
-        .groth16_verify(&bytes, &proof_bytes_vec, VK_BYTES)
+        .groth16_verify(&bytes, &proof_bytes_vec, VK_BYTES, 1)
         .map_err(|_| ContractError::VerifyError)?;
 
     if !result {
