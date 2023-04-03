@@ -17,8 +17,6 @@ use crate::state::{
     MerkleTree, Mixer,
 };
 
-const VK_BYTES: &[u8; 360] = include_bytes!("../../../bn254/x5/verifying_key.bin");
-
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -34,6 +32,7 @@ pub fn instantiate(
     // Initialize the "Mixer"
     let merkle_tree: MerkleTree = MerkleTree {
         levels: msg.merkletree_levels,
+        curve: msg.curve,
         current_root_index: 0,
         next_index: 0,
     };
@@ -45,6 +44,7 @@ pub fn instantiate(
         native_token_denom,
         deposit_size,
         merkle_tree,
+        vk_raw: msg.vk_raw,
     };
     mixer_write(deps.storage, &mixer)?;
 
@@ -156,7 +156,7 @@ pub fn withdraw(
 
     let arbitrary_input = deps
         .api
-        .curve_hash(&arbitrary_data_bytes, 1)
+        .curve_hash(&arbitrary_data_bytes, merkle_tree.curve)
         .map_err(|_| ContractError::HashError)?;
 
     // Join the public input bytes
@@ -168,7 +168,7 @@ pub fn withdraw(
     // Verify the proof
     let result = deps
         .api
-        .groth16_verify(&bytes, &proof_bytes_vec, VK_BYTES, 1)
+        .groth16_verify(&bytes, &proof_bytes_vec, &mixer.vk_raw, merkle_tree.curve)
         .map_err(|_| ContractError::VerifyError)?;
 
     if !result {

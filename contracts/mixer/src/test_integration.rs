@@ -1,3 +1,4 @@
+use crate::msg::InstantiateMsg;
 use crate::test_util::{gen_zk_proof, MixerR1CSProverBn254_30};
 
 use cosmwasm_std::{coins, from_slice, to_vec, Binary, ContractResult, QueryResponse};
@@ -20,7 +21,7 @@ const DEFAULT_INSTANCE_OPTIONS: InstanceOptions = InstanceOptions {
 };
 
 static CONTRACT: &[u8] = include_bytes!("../artifacts/mixer.wasm");
-
+const VK_BYTES: &[u8; 360] = include_bytes!("../../../bn254/x5/verifying_key.bin");
 const RECIPIENT: &str = "orai1602dkqjvh4s7ryajnz2uwhr8vetrwr8nekpxv5";
 const SENDER: &str = "orai122qgjdfjm73guxjq0y67ng8jgex4w09ttguavj";
 const NOTES: [&str;10] = [
@@ -75,11 +76,17 @@ fn test_zk() {
     )
     .unwrap();
 
-    let msg =
-        br#"{"deposit_size": "100000", "merkletree_levels": 30, "native_token_denom": "orai"}"#;
+    let msg = to_vec(&InstantiateMsg {
+        deposit_size: 100000u128.into(),
+        merkletree_levels: 30,
+        native_token_denom: "orai".to_string(),
+        curve: 1,
+        vk_raw: VK_BYTES.into(),
+    })
+    .unwrap();
     let env = to_vec(&mock_env()).unwrap();
     let info = to_vec(&mock_info("creator", &[])).unwrap();
-    let contract_result = call_instantiate_raw(&mut instance, &env, &info, msg).unwrap();
+    let contract_result = call_instantiate_raw(&mut instance, &env, &info, &msg).unwrap();
     println!(
         "Done instantiating contract: {}",
         String::from_utf8(contract_result).unwrap()

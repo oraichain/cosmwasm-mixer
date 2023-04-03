@@ -26,6 +26,16 @@ const RELAYER: &str = "orai1jrj2vh6cstqwk3pg8nkmdf0r9z0n3q3f3jk5xn";
 const FEE: u128 = 0;
 const REFUND: u128 = 0;
 
+const VK_RAW: &str = "qNKepAYpvnYvKhK9p8xFuZijTEOpbExnRMjHqQDo+Ape7Ob6V3FInLAwb0ma2Roz0BWfKXhjMteC24cKCYBECqEiWtI8DkdsfTa3luaptQJAhBtL6VXRPqVN2NoBEo4M+SCUtFn/iCeAq98+F4TAbfbIXAAG/X8ll+PpBS2SFSdPCPxPlNyBKfKaV43Bf16mDqhdLIingpS3ktvy+o0wlzuAymtWdGO2kLizqPcOtkaCJzWOXzFuuBUKkhUrdTUZxMqCf+wX9yg9FSKHZ7Vrc27JSY85/ltRGor1A7Y6GZcEAAAAAAAAALnIa74+XvNJDV20eL4KeTOTTktaFI4sAWArR1yD4lAIkdxEpv4vMx2ptm81YjmKdiZ397fJXTqCqWmODPYhISjW6yej8Rq7UqmKUJvxUC8JR+mrnB1yoIYUDA0xaGbWJMIqafjftZV+NdjT01CzyD7pXoiXx7dtQYgWg9JWHNkZ";
+
+#[test]
+fn test() {
+    println!(
+        "{}",
+        Binary::from(Fr::one().into_repr().to_bytes_le()).to_base64()
+    )
+}
+
 fn create_mixer() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
     let mut deps = mock_dependencies();
     // Initialize the contract
@@ -35,6 +45,8 @@ fn create_mixer() -> OwnedDeps<MockStorage, MockApi, MockQuerier> {
         merkletree_levels: MERKLE_TREE_LEVELS as u32,
         deposit_size: Uint128::try_from(DEPOSIT_SIZE).unwrap(),
         native_token_denom: NATIVE_TOKEN_DENOM.to_string(),
+        curve: 1,
+        vk_raw: Binary::from_base64(VK_RAW).unwrap(),
     };
 
     let _ = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -75,6 +87,8 @@ fn test_mixer_proper_initialization() {
         merkletree_levels: MERKLE_TREE_LEVELS as u32,
         deposit_size: Uint128::try_from(DEPOSIT_SIZE).unwrap(),
         native_token_denom: NATIVE_TOKEN_DENOM.to_string(),
+        curve: 1,
+        vk_raw: Binary::from_base64(VK_RAW).unwrap(),
     };
 
     // Should pass this "unwrap" if success.
