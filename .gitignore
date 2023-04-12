@@ -21,3 +21,5 @@ test-scripts/src/config/wasms/*.wasm
 
 test-scripts/yarn.lock
 .env
+
+dist

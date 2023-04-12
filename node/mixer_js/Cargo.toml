@@ -1,0 +1,21 @@
+[package]
+name = "cosmwasm-mixer-nodejs"
+version = "0.0.0"
+authors = ["tu@orai.io"]
+edition = "2021"
+publish = false
+
+
+[lib]
+crate-type = ["cdylib"]
+
+
+[dependencies]
+node-bindgen = { version = "5.1.0" }
+getrandom = { version = "0.2", features = ["js"] }
+rand = { version = "0.8.3", features = ["getrandom"] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-setups = { version = "=1.0.0", features = ["r1cs"], default-features = false }
+
+[build-dependencies]
+node-bindgen = { version = "5.1.0", default-features = false, features = ["build"] }

@@ -27,33 +27,25 @@ const noteSecrets = [
   'xPzvh1grKoYumCb4n9xhqYwKhvmMoRkjxwZikbw4zUoQl71fMEfRbGr7qB4h9Fdu406GVALyM7xoccNYxyJspg',
   'GkesyRfpUROHh7qPQfleEloQMcliziEKB5dyaE4uJPaMXiSkx1XlasOKUj/+GwmXwW2F3uOE7wlvtugxlbDrGQ',
   'lLxMwSkeMx9wHpt0a85DH7n+hpm6ElJGetbH7DW+lDVnn1y83ohUosrngWJPSygjzXM5802H2S9Hz9NabQoHyg'
-];
+].map((secret) => Buffer.from(secret.padEnd(88, '='), 'base64'));
 
-function compare(a, b) {
+function compare(a: Uint8Array, b: Uint8Array) {
   for (let i = a.length; -1 < i; i -= 1) {
     if (a[i] !== b[i]) return false;
   }
   return true;
 }
 
-let leaves = undefined;
+let leaves: Uint8Array[] = undefined;
 const getLeaves = async (address: string): Promise<Uint8Array[]> => {
   if (!leaves) {
-    const res = await axios.get(
-      `${process.env.URL}/cosmos/tx/v1beta1/txs?events=wasm-mixer-deposit._contract_address%3d%27${address}%27`
-    );
-    leaves = res.data.txs.map((tx: any) =>
-      Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64')
-    );
+    const res = await axios.get(`${process.env.URL}/cosmos/tx/v1beta1/txs?events=wasm-mixer-deposit._contract_address%3d%27${address}%27`);
+    leaves = res.data.txs.map((tx: any) => Buffer.from(tx.body.messages[0].msg.deposit.commitment, 'base64'));
   }
   return leaves;
 };
 
-const query = async (
-  client: cosmwasm.SigningCosmWasmClient,
-  address: string,
-  input: Record<string, any>
-): Promise<any> => {
+const query = async (client: cosmwasm.SigningCosmWasmClient, address: string, input: Record<string, any>): Promise<any> => {
   try {
     const res = await client.queryContractSmart(address, input);
 
@@ -63,27 +55,15 @@ const query = async (
   }
 };
 
-const getNote = (index = 0): Buffer => {
-  return Buffer.from(noteSecrets[index].padEnd(88, '='), 'base64');
-};
-
-const getProof = async (
-  sender: string,
-  noteSecret: Uint8Array,
-  recipient: string
-): Promise<Uint8Array[]> => {
+const getProof = async (sender: string, noteSecret: Uint8Array, recipient: string): Promise<Uint8Array[]> => {
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
   const leaves = await getLeaves(contract_address);
   const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
   return cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender);
 };
 
-const runDeposit = async (
-  client: cosmwasm.SigningCosmWasmClient,
-  sender: string,
-  index = 0
-) => {
-  const noteSecret = getNote(index);
+const runDeposit = async (client: cosmwasm.SigningCosmWasmClient, sender: string, index = 0) => {
+  const noteSecret = noteSecrets[index];
   const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
 
   const { deposit_size } = await query(client, contract_address, {
@@ -106,18 +86,8 @@ const runDeposit = async (
   console.log(JSON.stringify(result));
 };
 
-const runWithdraw = async (
-  client: cosmwasm.SigningCosmWasmClient,
-  sender: string,
-  recipient: string,
-  index = 0
-) => {
-  const noteSecret = getNote(index);
-  const [proof, root_hash, nullifier_hash] = await getProof(
-    sender,
-    noteSecret,
-    recipient
-  );
+const runWithdraw = async (client: cosmwasm.SigningCosmWasmClient, sender: string, recipient: string, index = 0) => {
+  const [proof, root_hash, nullifier_hash] = await getProof(sender, noteSecrets[index], recipient);
 
   // withdraw to this recipient
   const result = await client.execute(
@@ -141,34 +111,42 @@ const runWithdraw = async (
 };
 
 (async () => {
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-    process.env.MNEMONIC,
-    {
-      prefix
-    }
-  );
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(process.env.MNEMONIC, {
+    prefix
+  });
   const [firstAccount] = await wallet.getAccounts();
-  const client = await cosmwasm.SigningCosmWasmClient.connectWithSigner(
-    process.env.RPC_URL,
-    wallet,
-    {
-      gasPrice: new GasPrice(Decimal.fromUserInput('0', 6), denom),
-      prefix
-    }
-  );
+  // const client = await cosmwasm.SigningCosmWasmClient.connectWithSigner(
+  //   process.env.RPC_URL,
+  //   wallet,
+  //   {
+  //     gasPrice: new GasPrice(Decimal.fromUserInput('0', 6), denom),
+  //     prefix
+  //   }
+  // );
 
-  // should get leaves from relayer or contract logs
-  // leaves = noteSecrets
-  //   .map((secret) => Buffer.from(secret.padEnd(88, '='), 'base64'))
-  //   .map((noteSecret) => cosmwasmMixer.gen_commitment(noteSecret));
+  // for (let i = 0; i < 10; i++) {
+  //   await runDeposit(client, firstAccount.address, i);
+  // }
 
-  for (let i = 0; i < 10; i++) {
-    await runDeposit(client, firstAccount.address, i);
-  }
-
-  await runWithdraw(client, firstAccount.address, recipient, 0);
+  // await runWithdraw(client, firstAccount.address, recipient, 0);
 
   // for (let i = 0; i < 10; i++) {
   //   await runWithdraw(client, firstAccount.address, recipient, i);
   // }
+
+  const addon = require('./node/mixer_js/dist');
+
+  leaves = noteSecrets.map((noteSecret) => cosmwasmMixer.gen_commitment(noteSecret));
+  const noteSecret = noteSecrets[0];
+  const sender = firstAccount.address;
+
+  const commitment_hash = cosmwasmMixer.gen_commitment(noteSecret);
+  const leafIndex = leaves.findIndex((leaf) => compare(leaf, commitment_hash));
+
+  let start = Date.now();
+  const proofWasm = cosmwasmMixer.gen_zk(noteSecret, leafIndex, leaves, recipient, sender).map((a) => a.buffer);
+  console.log('wasm took', Date.now() - start);
+  start = Date.now();
+  const proof = addon.genZk(noteSecret, leafIndex, leaves, recipient, sender);
+  console.log('node took', Date.now() - start);
 })();
